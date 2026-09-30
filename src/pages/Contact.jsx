@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import API from '../api';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -57,7 +57,8 @@ export default function Contact() {
     setStatus({ type: '', text: '' });
 
     try {
-      const res = await axios.post('http://localhost:5000/api/inquiries', formData);
+      // API instance will use live Render backend URL from VITE_API_URL
+      const res = await API.post('/api/inquiries', formData);
       if (res.data.success) {
         setStatus({
           type: 'success',
