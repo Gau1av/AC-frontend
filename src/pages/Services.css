@@ -1,0 +1,606 @@
+/* ==========================================================================
+   Base Styles & Reset
+   ========================================================================== */
+:root {
+  --primary-color: #0284c7;
+  --primary-hover: #0369a1;
+  --secondary-color: #0f172a;
+  --accent-color: #38bdf8;
+  --text-main: #334155;
+  --text-muted: #64748b;
+  --bg-light: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px -5px rgba(2, 132, 199, 0.15);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --transition: all 0.25s ease-in-out;
+}
+
+.services-page {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-main);
+  background-color: var(--bg-light);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   Navigation Bar
+   ========================================================================== */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 5%;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar .logo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar .logo span {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.navbar nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.navbar nav a {
+  text-decoration: none;
+  color: var(--text-main);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.navbar nav a:hover,
+.navbar nav a.active {
+  color: var(--primary-color);
+}
+
+.call-btn {
+  background-color: #ecfdf5;
+  color: #059669;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #a7f3d0;
+  transition: var(--transition);
+}
+
+.call-btn:hover {
+  background-color: #059669;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Hero & Tab Filters
+   ========================================================================== */
+.services-hero {
+  text-align: center;
+  padding: 4rem 1.5rem 3rem;
+  background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+}
+
+.sub-badge {
+  display: inline-block;
+  background-color: #bae6fd;
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  margin-bottom: 1rem;
+}
+
+.services-hero h1 {
+  font-size: 2.4rem;
+  color: var(--secondary-color);
+  font-weight: 800;
+  margin-bottom: 0.8rem;
+}
+
+.services-hero p {
+  color: var(--text-muted);
+  max-width: 680px;
+  margin: 0 auto 2rem;
+  font-size: 1.1rem;
+}
+
+.tab-filters {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tab-filters button {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 0.65rem 1.4rem;
+  border-radius: 50px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-filters button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tab-filters button.active {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+/* ==========================================================================
+   Category Blocks & Pricing Cards
+   ========================================================================== */
+.services-content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+}
+
+.category-block {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.category-header {
+  margin-bottom: 2rem;
+}
+
+.category-header h2 {
+  font-size: 1.8rem;
+  color: var(--secondary-color);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.category-tagline {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.category-desc {
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  max-width: 800px;
+}
+
+/* Pricing Grid */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.plan-card {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: var(--transition);
+}
+
+.plan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.plan-card.highlighted {
+  background: #ffffff;
+  border: 2px solid var(--primary-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.badge {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+}
+
+.plan-card h3 {
+  font-size: 1.25rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.price-tag {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  margin-bottom: 1.25rem;
+}
+
+.plan-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  flex-grow: 1;
+}
+
+.plan-checklist li {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.check-mark {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.book-service-btn {
+  background: var(--secondary-color);
+  color: #ffffff;
+  border: none;
+  padding: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  width: 100%;
+}
+
+.plan-card.highlighted .book-service-btn,
+.book-service-btn:hover {
+  background: var(--primary-color);
+}
+
+/* Issues Chip Box */
+.issues-box {
+  background-color: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+}
+
+.issues-box h4 {
+  color: #92400e;
+  margin-bottom: 0.8rem;
+  font-size: 0.98rem;
+}
+
+.issues-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.issue-chip {
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  color: #78350f;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Service Assurance / Guarantees
+   ========================================================================== */
+.service-guarantees {
+  max-width: 1200px;
+  margin: 0 auto 5rem;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.service-guarantees h2 {
+  font-size: 2rem;
+  color: var(--secondary-color);
+  margin-bottom: 2.5rem;
+}
+
+.guarantees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.guarantee-card {
+  background: #ffffff;
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.guarantee-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.guarantee-card h3 {
+  font-size: 1.15rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.guarantee-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Modal Dialog & Booking Form
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: var(--radius-lg);
+  padding: 2.2rem;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.modal-close-btn:hover {
+  color: var(--secondary-color);
+}
+
+.booking-form h3 {
+  font-size: 1.5rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.25rem;
+}
+
+.modal-subheading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-subheading strong {
+  color: var(--primary-color);
+}
+
+.booking-form label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+  margin-bottom: 0.35rem;
+}
+
+.booking-form input,
+.booking-form textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  margin-bottom: 1.1rem;
+  background: #fdfdfd;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+.booking-form input:focus,
+.booking-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: var(--primary-color);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.alert {
+  background-color: #ecfdf5;
+  color: #065f46;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #a7f3d0;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Floating WhatsApp Button
+   ========================================================================== */
+.whatsapp-float {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  background-color: #25d366;
+  color: #ffffff;
+  padding: 0.8rem 1.3rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+  z-index: 999;
+  transition: var(--transition);
+}
+
+.whatsapp-float:hover {
+  background-color: #20ba5c;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.footer {
+  background-color: var(--secondary-color);
+  color: #94a3b8;
+  padding: 4rem 1.5rem 1.5rem;
+}
+
+.footer-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.footer-col .logo {
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-col h4 {
+  color: #ffffff;
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+}
+
+.footer-col a {
+  display: block;
+  color: #94a3b8;
+  text-decoration: none;
+  margin-bottom: 0.65rem;
+  font-size: 0.92rem;
+  transition: var(--transition);
+}
+
+.footer-col a:hover {
+  color: var(--accent-color);
+}
+
+.footer-col p {
+  font-size: 0.92rem;
+  margin-bottom: 0.5rem;
+}
+
+.footer-bottom {
+  border-top: 1px solid #1e293b;
+  text-align: center;
+  padding-top: 1.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   Mobile & Tablet Responsiveness
+   ========================================================================== */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .navbar nav {
+    gap: 1rem;
+  }
+
+  .services-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .category-block {
+    padding: 1.5rem;
+  }
+
+  .modal-card {
+    padding: 1.5rem;
+  }
+}
