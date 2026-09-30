@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import API from "../api";
 import "./Home.css";
 
 // Banner images
@@ -113,8 +113,8 @@ export default function Home() {
   };
 
   const handleOpenModalWithService = (serviceTitle = "AC Services") => {
-    setFormData((prev) => ({ 
-      ...prev, 
+    setFormData((prev) => ({
+      ...prev,
       serviceType: serviceTitle,
       date: prev.date || getTodayDate()
     }));
@@ -132,7 +132,7 @@ export default function Home() {
     setLoading(true);
     setStatus("");
     try {
-      const res = await axios.post("http://localhost:5000/api/inquiries", formData);
+      const res = await API.post("/api/inquiries", formData);
       if (res.data.success) {
         setStatus(res.data.message || "Booking request confirmed successfully!");
         setFormData({
@@ -275,8 +275,8 @@ export default function Home() {
               <div className="service-icon">{service.icon}</div>
               <h3>{service.title}</h3>
               <p>{service.description}</p>
-              <button 
-                onClick={() => handleOpenModalWithService(service.title)} 
+              <button
+                onClick={() => handleOpenModalWithService(service.title)}
                 className="service-book-btn"
               >
                 Book Now →
@@ -445,10 +445,10 @@ export default function Home() {
       )}
 
       {/* Floating WhatsApp Action Button */}
-      <a 
-        href="https://wa.me/919354397318?text=Hello,%20mujhe%20service%20inquiry%20karni%20hai" 
-        className="whatsapp-float" 
-        target="_blank" 
+      <a
+        href="https://wa.me/919354397318?text=Hello,%20mujhe%20service%20inquiry%20karni%20hai"
+        className="whatsapp-float"
+        target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
       >
