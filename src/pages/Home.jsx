@@ -42,9 +42,13 @@ const INDIAN_STATES = [
 ];
 
 export default function Home() {
-  // Aaj ki date auto-select karne ke liye
+  // Local timezone ke according YYYY-MM-DD format me aaj ki date nikalna
   const getTodayDate = () => {
-    return new Date().toISOString().split("T")[0];
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const [formData, setFormData] = useState({
@@ -54,7 +58,7 @@ export default function Home() {
     state: "",
     city: "",
     serviceType: "AC Services",
-    date: getTodayDate(), // Aaj ki auto date
+    date: getTodayDate(), // Default aaj ki date
     message: ""
   });
 
@@ -389,7 +393,7 @@ export default function Home() {
                 ))}
               </select>
 
-              {/* 5. City (User can type freely) */}
+              {/* 5. City */}
               <label>City / Location *</label>
               <input
                 type="text"
@@ -415,12 +419,13 @@ export default function Home() {
                 <option value="Other">Other Home Appliances</option>
               </select>
 
-              {/* 7. Service Date (Service Type ke theek baad) */}
+              {/* 7. Service Date (Calendar Picker with min today & default today) */}
               <label>Preferred Service Date *</label>
               <input
                 type="date"
                 name="date"
                 required
+                min={getTodayDate()}
                 value={formData.date}
                 onChange={handleInputChange}
               />
@@ -444,15 +449,33 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating WhatsApp Action Button */}
+      {/* Floating WhatsApp Action Button (Only Icon) */}
       <a
         href="https://wa.me/919354397318?text=Hello,%20mujhe%20service%20inquiry%20karni%20hai"
         className="whatsapp-float"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          backgroundColor: "#25D366",
+          color: "#ffffff",
+          width: "58px",
+          height: "58px",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "30px",
+          boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
+          zIndex: 9999,
+          textDecoration: "none",
+          transition: "transform 0.2s ease"
+        }}
       >
-        💬 WhatsApp Chat
+        💬
       </a>
 
       {/* Footer */}
@@ -491,8 +514,9 @@ export default function Home() {
           <div className="footer-col">
             <h4>Service Areas</h4>
             <p>📍 Delhi</p>
-            <p>📍 Noida</p>
-            <p>📍 All over India</p>
+            <p>📍 Noida & Faridabad</p>
+            <p>📍 Ghaziabad & Gurugram(Haryana)</p>
+            <p>📍 All Over INDIA</p>
           </div>
         </div>
 

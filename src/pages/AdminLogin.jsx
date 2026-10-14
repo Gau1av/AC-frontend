@@ -6,6 +6,7 @@ export default function AdminLogin() {
   const [creds, setCreds] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -14,13 +15,10 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      // Live Render backend URL automatically use hoga (.env se)
       const res = await API.post('/api/admin/login', creds);
 
       if (res.data.success) {
-        // Token browser me save karein
         localStorage.setItem('adminToken', res.data.token);
-        // Dashboard par redirect karein
         navigate('/admin/dashboard');
       }
     } catch (err) {
@@ -32,108 +30,577 @@ export default function AdminLogin() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f1f5f9',
-      fontFamily: 'sans-serif',
-      padding: '20px'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '420px',
-        background: '#ffffff',
-        padding: '35px 30px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        border: '1px solid #e2e8f0'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-          <h2 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '1.6rem' }}>Admin Access Portal</h2>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>Chintu Cool Control Panel</p>
+    <div className="login-root">
+      <style>{`
+        * { box-sizing: border-box; }
+
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+
+        /* =========================================================
+           LOGIN ROOT — PREMIUM GRADIENT BACKGROUND
+           ========================================================= */
+        .login-root {
+          min-height: 100vh;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          position: relative;
+          overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background:
+            radial-gradient(circle at 15% 20%, rgba(2, 132, 199, 0.28), transparent 45%),
+            radial-gradient(circle at 85% 80%, rgba(34, 197, 94, 0.22), transparent 45%),
+            radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.12), transparent 60%),
+            linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c1a33 100%);
+        }
+
+        /* Decorative floating circles */
+        .login-root::before,
+        .login-root::after {
+          content: "";
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .login-root::before {
+          top: -180px;
+          left: -140px;
+          width: 420px;
+          height: 420px;
+          border: 1px solid rgba(56, 189, 248, 0.15);
+          box-shadow:
+            0 0 0 60px rgba(56, 189, 248, 0.03),
+            0 0 0 120px rgba(56, 189, 248, 0.02);
+          animation: floatSlow 12s ease-in-out infinite;
+        }
+
+        .login-root::after {
+          bottom: -160px;
+          right: -120px;
+          width: 380px;
+          height: 380px;
+          border: 1px solid rgba(34, 197, 94, 0.15);
+          box-shadow:
+            0 0 0 60px rgba(34, 197, 94, 0.03),
+            0 0 0 120px rgba(34, 197, 94, 0.02);
+          animation: floatSlow 14s ease-in-out infinite reverse;
+        }
+
+        @keyframes floatSlow {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(20px, -20px) scale(1.03); }
+        }
+
+        /* =========================================================
+           LOGIN CARD
+           ========================================================= */
+        .login-card {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          max-width: 440px;
+          background: rgba(255, 255, 255, 0.97);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          padding: 42px 36px 36px;
+          border-radius: 22px;
+          box-shadow:
+            0 30px 80px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+          border: 1px solid rgba(226, 232, 240, 0.9);
+          animation: cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          overflow: hidden;
+        }
+
+        /* Gradient top accent bar */
+        .login-card::before {
+          content: "";
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 5px;
+          background: linear-gradient(90deg, #0284c7, #22c55e, #38bdf8, #0284c7);
+          background-size: 200% 100%;
+          animation: gradientShift 4s linear infinite;
+        }
+
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+
+        @keyframes cardSlideUp {
+          from { opacity: 0; transform: translateY(30px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* =========================================================
+           BRAND LOGO & HEADER
+           ========================================================= */
+        .login-logo-wrap {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+
+        .login-logo {
+          width: 68px;
+          height: 68px;
+          display: grid;
+          place-items: center;
+          font-size: 2rem;
+          background: linear-gradient(135deg, #0284c7, #0369a1 60%, #0ea5e9);
+          border-radius: 20px;
+          box-shadow:
+            0 14px 30px rgba(2, 132, 199, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          color: #ffffff;
+          position: relative;
+          animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        .login-logo::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 24px;
+          border: 2px solid rgba(2, 132, 199, 0.2);
+          animation: logoRing 3s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+
+        @keyframes logoRing {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0; transform: scale(1.15); }
+        }
+
+        .login-header {
+          text-align: center;
+          margin-bottom: 28px;
+        }
+
+        .login-title {
+          margin: 0 0 8px;
+          color: #0f172a;
+          font-size: 1.55rem;
+          font-weight: 900;
+          letter-spacing: -0.03em;
+          line-height: 1.2;
+        }
+
+        .login-subtitle {
+          margin: 0;
+          color: #64748b;
+          font-size: 0.88rem;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+        }
+
+        .login-subtitle strong {
+          color: #0284c7;
+          font-weight: 700;
+        }
+
+        /* =========================================================
+           ERROR ALERT
+           ========================================================= */
+        .login-error {
+          background: linear-gradient(135deg, #fef2f2, #fee2e2);
+          color: #dc2626;
+          border: 1px solid #fecaca;
+          padding: 12px 16px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          font-size: 0.88rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          animation: shake 0.4s ease;
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+        }
+
+        .login-error-icon {
+          width: 26px;
+          height: 26px;
+          display: grid;
+          place-items: center;
+          background: #ffffff;
+          border-radius: 50%;
+          flex-shrink: 0;
+          font-size: 0.9rem;
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-6px); }
+          50% { transform: translateX(6px); }
+          75% { transform: translateX(-4px); }
+        }
+
+        /* =========================================================
+           FORM
+           ========================================================= */
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+
+        .form-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #334155;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .form-label-icon {
+          font-size: 0.9rem;
+        }
+
+        .input-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 13px 16px 13px 44px;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 12px;
+          font-size: 0.95rem;
+          font-family: inherit;
+          font-weight: 500;
+          color: #0f172a;
+          background: #f8fafc;
+          outline: none;
+          transition: all 0.25s ease;
+          box-sizing: border-box;
+        }
+
+        .form-input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+
+        .form-input:hover {
+          border-color: #94a3b8;
+          background: #ffffff;
+        }
+
+        .form-input:focus {
+          border-color: #0284c7;
+          background: #ffffff;
+          box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+        }
+
+        .form-input.has-toggle {
+          padding-right: 48px;
+        }
+
+        /* Left icon inside input */
+        .input-icon {
+          position: absolute;
+          left: 16px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 1.05rem;
+          color: #94a3b8;
+          pointer-events: none;
+          transition: color 0.25s ease;
+        }
+
+        .form-input:focus ~ .input-icon {
+          color: #0284c7;
+        }
+
+        /* Password toggle button */
+        .password-toggle {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 34px;
+          height: 34px;
+          display: grid;
+          place-items: center;
+          background: #f1f5f9;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.95rem;
+          color: #64748b;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+
+        .password-toggle:hover {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+
+        /* =========================================================
+           LOGIN BUTTON
+           ========================================================= */
+        .login-submit {
+          margin-top: 8px;
+          padding: 14px 20px;
+          background: linear-gradient(135deg, #0284c7, #0369a1);
+          color: #ffffff;
+          border: none;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 0.98rem;
+          font-family: inherit;
+          letter-spacing: 0.3px;
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow:
+            0 12px 26px rgba(2, 132, 199, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .login-submit::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+          transition: left 0.6s ease;
+        }
+
+        .login-submit:hover:not(:disabled)::before {
+          left: 100%;
+        }
+
+        .login-submit:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow:
+            0 16px 34px rgba(2, 132, 199, 0.42),
+            inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+
+        .login-submit:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .login-submit:disabled {
+          cursor: not-allowed;
+          opacity: 0.85;
+          background: linear-gradient(135deg, #64748b, #475569);
+        }
+
+        /* Loading spinner */
+        .btn-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2.5px solid rgba(255, 255, 255, 0.35);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        /* =========================================================
+           FOOTER SECURITY NOTE
+           ========================================================= */
+        .login-footer {
+          margin-top: 24px;
+          padding-top: 20px;
+          border-top: 1px dashed #e2e8f0;
+          text-align: center;
+        }
+
+        .login-footer-text {
+          font-size: 0.76rem;
+          color: #94a3b8;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          letter-spacing: 0.2px;
+        }
+
+        .login-footer-text span {
+          color: #22c55e;
+          font-weight: 700;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+        @media (max-width: 480px) {
+          .login-root {
+            padding: 16px;
+          }
+
+          .login-card {
+            padding: 32px 22px 26px;
+            border-radius: 18px;
+          }
+
+          .login-logo {
+            width: 58px;
+            height: 58px;
+            font-size: 1.7rem;
+            border-radius: 16px;
+          }
+
+          .login-title {
+            font-size: 1.3rem;
+          }
+
+          .login-subtitle {
+            font-size: 0.82rem;
+          }
+
+          .form-input {
+            padding: 12px 14px 12px 42px;
+            font-size: 0.92rem;
+          }
+
+          .login-submit {
+            padding: 13px 18px;
+            font-size: 0.92rem;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
+
+      <div className="login-card">
+        {/* Logo */}
+        <div className="login-logo-wrap">
+          <div className="login-logo">❄</div>
         </div>
 
+        {/* Header */}
+        <div className="login-header">
+          <h2 className="login-title">Admin Access Portal</h2>
+          <p className="login-subtitle">
+            Chintu Cool <strong>Control Panel</strong>
+          </p>
+        </div>
+
+        {/* Error Alert */}
         {error && (
-          <div style={{
-            background: '#fef2f2',
-            color: '#dc2626',
-            border: '1px solid #fecaca',
-            padding: '10px 14px',
-            borderRadius: '6px',
-            marginBottom: '18px',
-            fontSize: '0.88rem'
-          }}>
-            ⚠️ {error}
+          <div className="login-error">
+            <span className="login-error-icon">⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+        {/* Form */}
+        <form className="login-form" onSubmit={handleLogin}>
+          <div className="form-group">
+            <label className="form-label">
+              <span className="form-label-icon">👤</span>
               Username
             </label>
-            <input 
-              type="text" 
-              placeholder="e.g. admin" 
-              required 
-              value={creds.username} 
-              onChange={(e) => setCreds({ ...creds, username: e.target.value })} 
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                fontSize: '0.95rem',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-            />
+            <div className="input-wrap">
+              <span className="input-icon">👤</span>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. admin"
+                required
+                autoComplete="username"
+                value={creds.username}
+                onChange={(e) => setCreds({ ...creds, username: e.target.value })}
+              />
+            </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+          <div className="form-group">
+            <label className="form-label">
+              <span className="form-label-icon">🔒</span>
               Password
             </label>
-            <input 
-              type="password" 
-              placeholder="Enter admin password" 
-              required 
-              value={creds.password} 
-              onChange={(e) => setCreds({ ...creds, password: e.target.value })} 
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                fontSize: '0.95rem',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-            />
+            <div className="input-wrap">
+              <span className="input-icon">🔒</span>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="form-input has-toggle"
+                placeholder="Enter admin password"
+                required
+                autoComplete="current-password"
+                value={creds.password}
+                onChange={(e) => setCreds({ ...creds, password: e.target.value })}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{
-              marginTop: '8px',
-              padding: '12px',
-              background: '#0284c7',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'background 0.2s'
-            }}
-          >
-            {loading ? 'Authenticating...' : 'Login to Dashboard'}
+          <button type="submit" className="login-submit" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="btn-spinner"></span>
+                Authenticating...
+              </>
+            ) : (
+              <>
+                🚀 Login to Dashboard
+              </>
+            )}
           </button>
         </form>
+
+        {/* Footer */}
+        <div className="login-footer">
+          <div className="login-footer-text">
+            <span>🔒</span>
+            Secure Connection <span>•</span> 256-bit SSL Encrypted
+          </div>
+        </div>
       </div>
     </div>
   );
