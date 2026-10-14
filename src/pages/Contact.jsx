@@ -578,6 +578,7 @@ export default function Contact() {
           box-shadow: var(--shadow-sm);
           position: relative;
           overflow: hidden;
+          text-align: left;
         }
 
         .form-card::before {
@@ -594,6 +595,7 @@ export default function Contact() {
           font-size: clamp(1.5rem, 2.5vw, 1.9rem);
           font-weight: 850;
           line-height: 1.3;
+          text-align: left;
         }
 
         .form-card .sub {
@@ -601,13 +603,17 @@ export default function Contact() {
           color: var(--text-muted);
           font-size: 0.94rem;
           line-height: 1.7;
+          text-align: left;
         }
 
         .field-group {
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
           min-width: 0;
           margin-bottom: 19px;
+          width: 100%;
+          text-align: left;
         }
 
         .field-group label {
@@ -615,6 +621,10 @@ export default function Contact() {
           color: var(--secondary);
           font-size: 0.88rem;
           font-weight: 750;
+          text-align: left;
+          align-self: flex-start;
+          width: 100%;
+          display: block;
         }
 
         .form-card input,
@@ -632,11 +642,15 @@ export default function Contact() {
           font: inherit;
           font-size: 0.92rem;
           transition: var(--transition);
+          text-align: left;
+          box-sizing: border-box;
+          align-self: stretch;
         }
 
         .form-card input::placeholder,
         .form-card textarea::placeholder {
           color: #94a3b8;
+          text-align: left;
         }
 
         .form-card input:hover,
