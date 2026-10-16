@@ -1,0 +1,32 @@
+{
+  "name": "Chintu Cool AC Service",
+  "short_name": "Chintu Cool",
+  "description": "Doorstep AC, Refrigerator & Washing Machine Repair & Servicing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "./assets/logo.jpeg",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/logo.jpeg",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/logo.jpeg",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

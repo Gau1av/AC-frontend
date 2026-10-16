@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 // Asset images for visual richness
 import storyImage from '../assets/2.jpeg';
+import logo from '../assets/logo.jpeg'; // ✅ NEW: Logo import
 
 export default function About() {
   const stats = [
@@ -198,19 +199,46 @@ export default function About() {
           gap: 18px;
         }
 
+        /* ✅ UPDATED: Logo with circular image */
         .about-page .logo {
-          font-size: 1.3rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 1.2rem;
           font-weight: 800;
           color: var(--primary);
-          display: flex;
-          align-items: center;
-          gap: 8px;
           text-decoration: none;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.02em;
           white-space: nowrap;
         }
 
-        .about-page .logo span { font-size: 1.5rem; }
+        .about-page .logo-img {
+          width: 46px;
+          height: 46px;
+          min-width: 46px;
+          min-height: 46px;
+          aspect-ratio: 1 / 1;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 50%;
+          display: block;
+          flex-shrink: 0;
+          background: #ffffff;
+          border: 2px solid rgba(2, 132, 199, 0.22);
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+          transition: all 0.3s ease;
+        }
+
+        .about-page .logo:hover .logo-img {
+          transform: rotate(-6deg) scale(1.06);
+          border-color: var(--primary);
+          box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .about-page .logo-text {
+          font-weight: 800;
+          white-space: nowrap;
+        }
 
         .about-page .navbar nav {
           display: flex;
@@ -665,7 +693,6 @@ export default function About() {
 
         .about-page .value-card:hover .value-card-accent { transform: scaleX(1); }
 
-        /* Slider arrows */
         .about-page .values-slider-btn {
           position: absolute;
           top: 50%;
@@ -697,7 +724,6 @@ export default function About() {
         .about-page .values-slider-btn.prev { left: 4px; }
         .about-page .values-slider-btn.next { right: 4px; }
 
-        /* Slider dots */
         .about-page .values-slider-dots {
           display: flex;
           justify-content: center;
@@ -1043,14 +1069,26 @@ export default function About() {
           transform: translateX(4px);
         }
 
+        /* ✅ Footer logo with circular image */
         .about-page .footer .logo {
           color: #ffffff;
-          font-size: 1.15rem;
+          font-size: 1.1rem;
           margin-bottom: 12px;
           white-space: normal;
         }
 
-        .about-page .footer .logo span { color: #38bdf8; }
+        .about-page .footer .logo-img {
+          border: 2px solid rgba(56, 189, 248, 0.4);
+          box-shadow: 0 6px 16px rgba(56, 189, 248, 0.25);
+          width: 52px;
+          height: 52px;
+          min-width: 52px;
+          min-height: 52px;
+        }
+
+        .about-page .footer .logo-text {
+          color: #ffffff;
+        }
 
         .about-page .footer .logo + p {
           font-size: 0.9rem;
@@ -1105,7 +1143,6 @@ export default function About() {
           .about-page .story-content h2 { font-size: 1.6rem; }
           .about-page .story-content p { font-size: 0.95rem; }
 
-          /* Slider on mobile: full-width cards, no padding */
           .about-page .values-slider-wrapper { padding: 0; }
           .about-page .values-slider-btn { display: none; }
           .about-page .value-card {
@@ -1138,6 +1175,22 @@ export default function About() {
           .about-page .about-badge { font-size: 0.72rem; padding: 0.4rem 0.9rem; }
           .about-page .about-hero h1 { font-size: 1.65rem; }
 
+          .about-page .logo { font-size: 1rem; gap: 8px; }
+          .about-page .logo-img {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+          }
+          .about-page .logo-text { font-size: 0.9rem; }
+
+          .about-page .footer .logo-img {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+          }
+
           .about-page .stat-card { padding: 1.4rem 1rem; }
           .about-page .stat-card h3 { font-size: 1.6rem; }
 
@@ -1163,7 +1216,8 @@ export default function About() {
       {/* ============ NAVBAR ============ */}
       <header className="navbar">
         <Link to="/" className="logo">
-          <span>❄</span> Chintu Cool AC Service
+          <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+          <span className="logo-text">Chintu Cool AC Service</span>
         </Link>
         <nav>
           <Link to="/">Home</Link>
@@ -1367,9 +1421,10 @@ export default function About() {
       <footer className="footer">
         <div className="footer-grid">
           <div className="footer-col">
-            <div className="logo">
-              <span>❄</span> Chintu Cool AC Service
-            </div>
+            <Link to="/" className="logo">
+              <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+              <span className="logo-text">Chintu Cool AC Service</span>
+            </Link>
             <p>Your dependable neighborhood technician network for air conditioning, cooling refrigeration, and home laundry systems.</p>
           </div>
 
@@ -1390,7 +1445,7 @@ export default function About() {
 
           <div className="footer-col">
             <h4>Operational Headquarters</h4>
-           <p>📍 Nodia Sector 11 M 12</p>
+            <p>📍 Nodia Sector 11 M 12</p>
           </div>
         </div>
 

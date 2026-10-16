@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api';
+import logo from '../assets/logo.jpeg' // ✅ NEW: Logo import
 
 export default function Contact() {
   const initialFormData = {
@@ -265,7 +266,7 @@ export default function Contact() {
         }
 
         /* ==========================================
-           NAVBAR — Rainbow border
+           NAVBAR — Rainbow border + Circular Logo
            ========================================== */
         .contact-navbar {
           display: flex;
@@ -285,23 +286,48 @@ export default function Contact() {
           box-shadow: 0 4px 20px rgba(139, 92, 246, 0.08);
         }
 
+        /* ✅ NEW: Logo wrapper with image + text */
         .contact-logo {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 9px;
-          font-size: 1.18rem;
+          gap: 11px;
+          font-size: 1.15rem;
           font-weight: 850;
           white-space: nowrap;
+          text-decoration: none;
+          color: var(--secondary);
+        }
+
+        .contact-logo-img {
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
+          min-height: 48px;
+          aspect-ratio: 1 / 1;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 50%;
+          display: block;
+          flex-shrink: 0;
+          background: #ffffff;
+          border: 2px solid rgba(139, 92, 246, 0.28);
+          box-shadow: 0 4px 14px rgba(139, 92, 246, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .contact-logo:hover .contact-logo-img {
+          transform: rotate(-6deg) scale(1.06);
+          border-color: #8b5cf6;
+          box-shadow: 0 8px 22px rgba(139, 92, 246, 0.35);
+        }
+
+        .contact-logo-text {
           background: linear-gradient(90deg, #0284c7, #8b5cf6, #ec4899);
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
-        }
-
-        .contact-logo span {
-          font-size: 1.7rem;
-          -webkit-text-fill-color: initial;
-          color: #14b8a6;
+          font-weight: 850;
+          white-space: nowrap;
         }
 
         .contact-nav {
@@ -461,7 +487,7 @@ export default function Contact() {
         }
 
         /* ==========================================
-           CONTACT CARDS — Colorful gradients
+           CONTACT CARDS
            ========================================== */
         .cards-container {
           display: grid;
@@ -767,7 +793,7 @@ export default function Contact() {
         }
 
         /* ==========================================
-           WORKING HOURS SLIDER — Colorful
+           WORKING HOURS SLIDER
            ========================================== */
         .hours-box {
           position: relative;
@@ -953,7 +979,7 @@ export default function Contact() {
         }
 
         /* ==========================================
-           SLIDER CONTROLS — Colorful
+           SLIDER CONTROLS
            ========================================== */
         .hours-controls {
           display: flex;
@@ -1023,7 +1049,7 @@ export default function Contact() {
         }
 
         /* ==========================================
-           FOOTER — Colorful glow
+           FOOTER
            ========================================== */
         .contact-footer {
           padding: 38px 20px 25px;
@@ -1105,9 +1131,17 @@ export default function Contact() {
           }
 
           .contact-logo {
-            font-size: 1.05rem;
+            font-size: 1rem;
             white-space: normal;
             text-align: center;
+            gap: 9px;
+          }
+
+          .contact-logo-img {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
           }
 
           .contact-nav {
@@ -1238,6 +1272,13 @@ export default function Contact() {
             font-size: 0.81rem;
           }
 
+          .contact-logo-img {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+          }
+
           .hours-box {
             padding-right: 9px;
             padding-left: 9px;
@@ -1270,10 +1311,14 @@ export default function Contact() {
 
       {/* NAVBAR */}
       <header className="contact-navbar">
-        <div className="contact-logo">
-          <span>❄</span>
-          Chintu Cool AC Service
-        </div>
+        <Link to="/" className="contact-logo">
+          <img
+            src={logo}
+            alt="Chintu AC Cool Care"
+            className="contact-logo-img"
+          />
+          <span className="contact-logo-text">Chintu Cool AC Service</span>
+        </Link>
 
         <nav className="contact-nav" aria-label="Main navigation">
           <Link to="/">Home</Link>

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import API from "../api";
+import API, { getImageUrl } from "../api";
 import "./Home.css";
 
 // Banner images
 import banner1 from "../assets/2.jpeg";
 import banner2 from "../assets/3.jpeg";
 import banner3 from "../assets/WhatsApp Image 2026-09-05 at 15.45.15.jpeg";
+import logo from "../assets/logo.jpeg";
 
 // 29 States & UT fixed list
 const INDIAN_STATES = [
@@ -42,7 +43,6 @@ const INDIAN_STATES = [
 ];
 
 export default function Home() {
-  // Local timezone ke according YYYY-MM-DD format me aaj ki date nikalna
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -58,13 +58,17 @@ export default function Home() {
     state: "",
     city: "",
     serviceType: "AC Services",
-    date: getTodayDate(), // Default aaj ki date
+    date: getTodayDate(),
     message: ""
   });
 
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 📰 Blogs State
+  const [latestBlogs, setLatestBlogs] = useState([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
 
   // Slider banner state
   const bannerImages = [banner1, banner2, banner3];
@@ -77,6 +81,39 @@ export default function Home() {
 
     return () => clearInterval(slideInterval);
   }, [bannerImages.length]);
+
+  // 🔄 Fetch published blogs for Home page
+  useEffect(() => {
+    const fetchHomeBlogs = async () => {
+      try {
+        setBlogsLoading(true);
+        // Public API endpoint for blogs (fallback to /api/admin/blogs if public not available)
+        const res = await API.get("/api/blogs?status=Published");
+        const allBlogs = res.data.data || res.data || [];
+        // Only take published and limit to top 3 for clean layout
+        const published = allBlogs
+          .filter((b) => !b.status || b.status === "Published")
+          .slice(0, 3);
+        setLatestBlogs(published);
+      } catch (err) {
+        // Fallback try to admin endpoint
+        try {
+          const fallbackRes = await API.get("/api/admin/blogs");
+          const blogsData = fallbackRes.data.data || [];
+          const published = blogsData
+            .filter((b) => b.status === "Published")
+            .slice(0, 3);
+          setLatestBlogs(published);
+        } catch (innerErr) {
+          console.error("Home blog fetch error:", innerErr);
+        }
+      } finally {
+        setBlogsLoading(false);
+      }
+    };
+
+    fetchHomeBlogs();
+  }, []);
 
   const handlePrevSlide = () => {
     setCurrentSlide((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1));
@@ -162,13 +199,15 @@ export default function Home() {
       {/* Top Navbar */}
       <header className="navbar">
         <div className="logo">
-          <span>❄</span> Chintu Cool AC Service
+          <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+          <span className="logo-text">Chintu Cool AC Service</span>
         </div>
         <nav>
           <Link to="/">Home</Link>
           <Link to="/services">Services</Link>
           <Link to="/about">About</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/blog">Blog</Link>
           <Link to="/admin/dashboard" className="admin-link">Admin Portal</Link>
         </nav>
         <a className="call-btn" href="tel:+919354397318">
@@ -332,6 +371,71 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 📝 NEW: BLOGS SECTION ON HOME PAGE */}
+      <section className="home-blogs-section">
+        <div className="section-heading">
+          <p className="tagline">EXPERT TIPS & GUIDES</p>
+          <h2>Latest from Our Blog</h2>
+          <p>Maintenance advice, troubleshooting guides, and energy-saving tips from our repair specialists.</p>
+        </div>
+
+        {blogsLoading ? (
+          <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+            Loading latest blogs...
+          </div>
+        ) : latestBlogs.length > 0 ? (
+          <div className="home-blog-grid">
+            {latestBlogs.map((blog) => (
+              <article key={blog._id} className="home-blog-card">
+                <div className="home-blog-image-wrap">
+                  {blog.imageUrl ? (
+                    <img
+                      src={getImageUrl ? getImageUrl(blog.imageUrl) : blog.imageUrl}
+                      alt={blog.title}
+                      className="home-blog-img"
+                    />
+                  ) : (
+                    <div className="home-blog-placeholder">❄️ Appliance Guide</div>
+                  )}
+                  <span className="home-blog-badge">{blog.category || "AC Repair"}</span>
+                </div>
+
+                <div className="home-blog-content">
+                  <div className="home-blog-meta">
+                    <span>👤 {blog.author || "Expert Tech"}</span>
+                    <span>•</span>
+                    <span>📅 {new Date(blog.createdAt).toLocaleDateString()}</span>
+                  </div>
+
+                  <h3 className="home-blog-title">{blog.title}</h3>
+
+                  <p className="home-blog-excerpt">
+                    {blog.excerpt || (blog.content ? blog.content.substring(0, 100) + "..." : "")}
+                  </p>
+
+                  <Link
+                    to={`/blog/${blog.slug || blog._id}`}
+                    className="home-blog-read-btn"
+                  >
+                    Read Full Article →
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
+            No published blogs available right now. Check back soon!
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", marginTop: "32px" }}>
+          <Link to="/blog" className="home-blog-view-all">
+            View All Articles & Guides →
+          </Link>
+        </div>
+      </section>
+
       {/* Modal Popup Booking Form */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={handleCloseModal}>
@@ -344,7 +448,6 @@ export default function Home() {
 
               {status && <p className="alert">{status}</p>}
 
-              {/* 1. Name */}
               <label>Full Name *</label>
               <input
                 type="text"
@@ -355,7 +458,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* 2. Mobile */}
               <label>Mobile Number *</label>
               <input
                 type="tel"
@@ -367,7 +469,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* 3. Email (Optional) */}
               <label>Email Address (Optional)</label>
               <input
                 type="email"
@@ -377,7 +478,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* 4. State (Fixed Dropdown) */}
               <label>State *</label>
               <select
                 name="state"
@@ -393,7 +493,6 @@ export default function Home() {
                 ))}
               </select>
 
-              {/* 5. City */}
               <label>City / Location *</label>
               <input
                 type="text"
@@ -404,7 +503,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* 6. Service Type */}
               <label>Select Service *</label>
               <select
                 name="serviceType"
@@ -419,7 +517,6 @@ export default function Home() {
                 <option value="Other">Other Home Appliances</option>
               </select>
 
-              {/* 7. Service Date (Calendar Picker with min today & default today) */}
               <label>Preferred Service Date *</label>
               <input
                 type="date"
@@ -430,7 +527,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* 8. Message */}
               <label>Message / Appliance Issue *</label>
               <textarea
                 name="message"
@@ -449,7 +545,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating WhatsApp Action Button (Only Icon) */}
+      {/* Floating WhatsApp Action Button */}
       <a
         href="https://wa.me/919354397318?text=Hello,%20mujhe%20service%20inquiry%20karni%20hai"
         className="whatsapp-float"
@@ -483,7 +579,8 @@ export default function Home() {
         <div className="footer-grid container">
           <div className="footer-col">
             <div className="logo">
-              <span>❄</span> Chintu Cool AC Service
+              <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+              <span className="logo-text">Chintu Cool AC Service</span>
             </div>
             <p>Doorstep AC, Refrigerator, and Washing Machine Repair & Servicing Solutions.</p>
           </div>
@@ -494,6 +591,7 @@ export default function Home() {
             <Link to="/services">Services</Link>
             <Link to="/about">About Us</Link>
             <Link to="/contact">Contact</Link>
+            <Link to="/blog">Blog</Link>
           </div>
 
           <div className="footer-col">

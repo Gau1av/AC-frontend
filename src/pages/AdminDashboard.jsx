@@ -1,20 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API from '../api';
-import { Line } from 'react-chartjs-2';
+import API, { getImageUrl } from '../api';
+import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
+import * as XLSX from 'xlsx';
 import { STATE_CITY_DATA, APPLIANCE_SERVICES } from '../data/locationData';
+import logo from '../assets/logo.jpeg'; // ✅ NEW: Logo import
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -69,11 +85,50 @@ export default function AdminDashboard() {
     status: 'Pending'
   });
 
+  /* ---------- BLOG STATE ---------- */
+  const [blogs, setBlogs] = useState([]);
+  const [blogSearch, setBlogSearch] = useState('');
+  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+  const [editingBlog, setEditingBlog] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [newBlog, setNewBlog] = useState({
+    title: '',
+    slug: '',
+    category: 'AC Repair',
+    author: '',
+    excerpt: '',
+    content: '',
+    imageUrl: '',
+    status: 'Draft'
+  });
+
+  /* ---------- EXCEL UPLOAD STATE ---------- */
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState([]);
+  const [uploadError, setUploadError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  /* ---------- REPORT STATE ---------- */
+  const [reportRange, setReportRange] = useState('month');
+  const [businessReport, setBusinessReport] = useState({ labels: [], datasets: [] });
+  const [serviceReport, setServiceReport] = useState({ labels: [], datasets: [] });
+
+  /* ---------- COMMENTS STATE ---------- */
+  const [comments, setComments] = useState([]);
+  const [commentFilter, setCommentFilter] = useState('All');
+  const [commentSearch, setCommentSearch] = useState('');
+
+  /* ---------- SUBSCRIBERS STATE ---------- */
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (!token) navigate('/admin/login');
   }, [navigate]);
 
+  /* ---------- FETCHERS ---------- */
   const fetchStats = async () => {
     try {
       const res = await API.get('/api/admin/stats');
@@ -143,20 +198,117 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchBlogs = async () => {
+    try {
+      const params = new URLSearchParams({ search: blogSearch });
+      const res = await API.get(`/api/admin/blogs?${params.toString()}`);
+      setBlogs(res.data.data || []);
+    } catch (err) {
+      console.error('Blogs error:', err);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      const [bizRes, svcRes] = await Promise.all([
+        API.get(`/api/admin/reports/businesses?range=${reportRange}`),
+        API.get('/api/admin/reports/inquiries')
+      ]);
+
+      setBusinessReport({
+        labels: bizRes.data.data.map((d) => d._id),
+        datasets: [
+          {
+            label: `Businesses Registered (${reportRange.toUpperCase()})`,
+            data: bizRes.data.data.map((d) => d.count),
+            borderColor: '#ff8a00',
+            backgroundColor: 'rgba(255, 138, 0, 0.15)',
+            tension: 0.35,
+            fill: true,
+            borderWidth: 3,
+            pointBackgroundColor: '#ff8a00',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
+          }
+        ]
+      });
+
+      setServiceReport({
+        labels: svcRes.data.data.map((d) => d._id || 'Other'),
+        datasets: [
+          {
+            label: 'Inquiries by Service',
+            data: svcRes.data.data.map((d) => d.count),
+            backgroundColor: [
+              '#0284c7',
+              '#ff8a00',
+              '#10b981',
+              '#ef4444',
+              '#8b5cf6',
+              '#f59e0b',
+              '#14b8a6',
+              '#ec4899'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }
+        ]
+      });
+    } catch (err) {
+      console.error('Reports error:', err);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (commentFilter !== 'All') params.append('status', commentFilter);
+      const res = await API.get(`/api/admin/comments?${params.toString()}`);
+      setComments(res.data.data || []);
+    } catch (err) {
+      console.error('Comments error:', err);
+    }
+  };
+
+  const fetchSubscribers = async () => {
+    try {
+      const res = await API.get('/api/newsletter/admin/all');
+      setSubscribers(res.data.data || []);
+    } catch (err) {
+      console.error('Subscribers error:', err);
+    }
+  };
+
+  /* ---------- EFFECTS ---------- */
   useEffect(() => {
     fetchStats();
     fetchAnalytics();
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
     if (activeTab === 'dashboard') fetchInquiries();
-    else fetchBusinesses();
-  }, [sidebarFilters, search, businessSearch, activeTab]);
+    else if (activeTab === 'businesses') fetchBusinesses();
+    else if (activeTab === 'blogs') fetchBlogs();
+    else if (activeTab === 'reports') fetchReports();
+    else if (activeTab === 'comments') fetchComments();
+    else if (activeTab === 'subscribers') fetchSubscribers();
+    // eslint-disable-next-line
+  }, [sidebarFilters, search, businessSearch, blogSearch, activeTab, commentFilter]);
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line
   }, [range]);
 
+  useEffect(() => {
+    if (activeTab === 'reports') fetchReports();
+    // eslint-disable-next-line
+  }, [reportRange]);
+
+  /* ---------- HANDLERS ---------- */
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin/login');
@@ -224,10 +376,15 @@ export default function AdminDashboard() {
       if (res.data.success) {
         setIsAddModalOpen(false);
         setNewInquiry({
-          name: '', mobile: '', email: '',
-          state: 'Delhi (NCT)', city: 'New Delhi',
+          name: '',
+          mobile: '',
+          email: '',
+          state: 'Delhi (NCT)',
+          city: 'New Delhi',
           serviceType: 'AC Service & Gas Charging',
-          date: '', message: '', status: 'Pending'
+          date: '',
+          message: '',
+          status: 'Pending'
         });
         fetchInquiries();
         fetchStats();
@@ -247,10 +404,14 @@ export default function AdminDashboard() {
       if (res.data.success) {
         setIsBusinessModalOpen(false);
         setNewBusiness({
-          businessName: '', ownerName: '', phone: '',
-          state: 'Delhi (NCT)', city: 'New Delhi',
+          businessName: '',
+          ownerName: '',
+          phone: '',
+          state: 'Delhi (NCT)',
+          city: 'New Delhi',
           serviceCategory: 'AC Service & Gas Charging',
-          status: 'Active', isPaid: false
+          status: 'Active',
+          isPaid: false
         });
         fetchBusinesses();
         fetchStats();
@@ -266,12 +427,256 @@ export default function AdminDashboard() {
     setSidebarFilters({ ...sidebarFilters, state: selectedState, city: 'All' });
   };
 
+  /* ---------- BLOG HANDLERS ---------- */
+  const handleBlogSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...newBlog,
+        slug:
+          newBlog.slug ||
+          newBlog.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      };
+
+      const res = editingBlog
+        ? await API.put(`/api/admin/blogs/${editingBlog._id}`, payload)
+        : await API.post('/api/admin/blogs', payload);
+
+      if (res.data.success) {
+        setIsBlogModalOpen(false);
+        setEditingBlog(null);
+        setNewBlog({
+          title: '',
+          slug: '',
+          category: 'AC Repair',
+          author: '',
+          excerpt: '',
+          content: '',
+          imageUrl: '',
+          status: 'Draft'
+        });
+        fetchBlogs();
+        setActionStatus(editingBlog ? 'Blog updated successfully!' : 'Blog created successfully!');
+        setTimeout(() => setActionStatus(''), 3000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Blog save failed');
+    }
+  };
+
+  const handleBlogDelete = async (id) => {
+    if (!window.confirm('Delete this blog post? Its comments will also be deleted.')) return;
+    try {
+      await API.delete(`/api/admin/blogs/${id}`);
+      fetchBlogs();
+      setActionStatus('Blog deleted successfully!');
+      setTimeout(() => setActionStatus(''), 3000);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Delete failed');
+    }
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlog(blog);
+    setNewBlog({
+      title: blog.title || '',
+      slug: blog.slug || '',
+      category: blog.category || 'AC Repair',
+      author: blog.author || '',
+      excerpt: blog.excerpt || '',
+      content: blog.content || '',
+      imageUrl: blog.imageUrl || '',
+      status: blog.status || 'Draft'
+    });
+    setIsBlogModalOpen(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!/image\/(jpeg|jpg|png|webp)/.test(file.type)) {
+      alert('Only JPG, PNG or WEBP images allowed');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be under 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await API.post('/api/admin/upload/blog-cover', formData);
+      if (res.data.success) {
+        setNewBlog((prev) => ({ ...prev, imageUrl: res.data.url }));
+        setActionStatus('Cover image uploaded!');
+        setTimeout(() => setActionStatus(''), 2500);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  /* ---------- EXCEL HANDLERS ---------- */
+  const handleFileChange = (e) => {
+    setUploadError('');
+    setUploadPreview([]);
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      setUploadError('Only .xlsx, .xls, or .csv files allowed');
+      return;
+    }
+    setUploadFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target.result, { type: 'binary' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        if (!rows.length) {
+          setUploadError('Excel file is empty');
+          return;
+        }
+        setUploadPreview(rows.slice(0, 5));
+      } catch (err) {
+        setUploadError('Could not parse file. Check format.');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleExcelUpload = async () => {
+    if (!uploadFile) {
+      setUploadError('Please select a file first');
+      return;
+    }
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      const res = await API.post('/api/admin/businesses/bulk-upload', formData);
+      if (res.data.success) {
+        setIsUploadModalOpen(false);
+        setUploadFile(null);
+        setUploadPreview([]);
+        fetchBusinesses();
+        fetchStats();
+        setActionStatus(`${res.data.count} businesses imported successfully!`);
+        setTimeout(() => setActionStatus(''), 3000);
+      }
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const downloadSampleExcel = () => {
+    const sample = [
+      {
+        businessName: 'Chintu Quick Repair',
+        ownerName: 'Ramesh Kumar',
+        phone: '9876543210',
+        state: 'Delhi (NCT)',
+        city: 'New Delhi',
+        serviceCategory: 'AC Service & Gas Charging',
+        status: 'Active',
+        isPaid: true
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(sample);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Businesses');
+    XLSX.writeFile(wb, 'business_template.xlsx');
+  };
+
+  /* ---------- COMMENT HANDLERS ---------- */
+  const handleCommentStatus = async (id, status) => {
+    try {
+      await API.put(`/api/admin/comments/${id}`, { status });
+      fetchComments();
+      setActionStatus(`Comment ${status.toLowerCase()}!`);
+      setTimeout(() => setActionStatus(''), 2500);
+    } catch (err) {
+      alert('Status update failed');
+    }
+  };
+
+  const handleCommentDelete = async (id) => {
+    if (!window.confirm('Delete this comment permanently?')) return;
+    try {
+      await API.delete(`/api/admin/comments/${id}`);
+      fetchComments();
+      setActionStatus('Comment deleted!');
+      setTimeout(() => setActionStatus(''), 2500);
+    } catch (err) {
+      alert('Delete failed');
+    }
+  };
+
+  /* ---------- SUBSCRIBER HANDLERS ---------- */
+  const handleSubscriberDelete = async (id) => {
+    if (!window.confirm('Remove this subscriber?')) return;
+    try {
+      await API.delete(`/api/newsletter/admin/${id}`);
+      fetchSubscribers();
+      setActionStatus('Subscriber removed!');
+      setTimeout(() => setActionStatus(''), 2500);
+    } catch (err) {
+      alert('Delete failed');
+    }
+  };
+
+  const exportSubscribersCSV = () => {
+    if (!subscribers.length) return alert('No subscribers to export');
+    const rows = [
+      ['Email', 'Status', 'Source', 'Subscribed On'],
+      ...subscribers.map((s) => [
+        s.email,
+        s.status,
+        s.source,
+        new Date(s.createdAt).toLocaleString()
+      ])
+    ];
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `subscribers-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const statCards = [
     { key: 'totalBusiness', label: 'Total Business', color: '#ff8a00', icon: '🏢', bg: 'linear-gradient(135deg, #fff7ed, #fed7aa)' },
     { key: 'totalPaid', label: 'Total Paid', color: '#10b981', icon: '💳', bg: 'linear-gradient(135deg, #ecfdf5, #a7f3d0)' },
     { key: 'totalLead', label: 'Total Lead', color: '#3b82f6', icon: '🎯', bg: 'linear-gradient(135deg, #eff6ff, #bfdbfe)' },
     { key: 'totalContact', label: 'Total Contact', color: '#14b8a6', icon: '📞', bg: 'linear-gradient(135deg, #f0fdfa, #99f6e4)' }
   ];
+
+  const filteredComments = comments.filter((c) => {
+    if (!commentSearch) return true;
+    const q = commentSearch.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.message?.toLowerCase().includes(q) ||
+      c.blog?.title?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredSubscribers = subscribers.filter(
+    (s) => !subscriberSearch || s.email.toLowerCase().includes(subscriberSearch.toLowerCase())
+  );
 
   return (
     <div className="admin-root">
@@ -323,6 +728,7 @@ export default function AdminDashboard() {
           border-radius: 10px;
         }
 
+        /* ============ SIDEBAR HEADER + LOGO ============ */
         .sidebar-header {
           padding: 22px 20px;
           border-bottom: 1px solid rgba(148, 163, 184, 0.12);
@@ -340,24 +746,59 @@ export default function AdminDashboard() {
           border-radius: 99px;
         }
 
+        .sidebar-brand-wrap {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .sidebar-logo {
+          width: 52px;
+          height: 52px;
+          min-width: 52px;
+          min-height: 52px;
+          aspect-ratio: 1 / 1;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 50%;
+          display: block;
+          flex-shrink: 0;
+          background: #ffffff;
+          border: 2px solid rgba(255, 138, 0, 0.4);
+          box-shadow: 0 8px 20px rgba(255, 138, 0, 0.25);
+          transition: all 0.3s ease;
+        }
+
+        .sidebar-logo:hover {
+          transform: rotate(-6deg) scale(1.05);
+          border-color: #ff8a00;
+          box-shadow: 0 12px 24px rgba(255, 138, 0, 0.4);
+        }
+
+        .sidebar-brand-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+
         .sidebar-brand {
-          font-size: 1.2rem;
+          font-size: 1.15rem;
           color: #ff8a00;
           font-weight: 800;
           letter-spacing: 0.3px;
           margin: 0;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          line-height: 1.15;
+          white-space: nowrap;
         }
 
         .sidebar-sub {
-          font-size: 0.72rem;
+          font-size: 0.68rem;
           color: #94a3b8;
-          margin-top: 6px;
           letter-spacing: 0.8px;
           text-transform: uppercase;
           font-weight: 600;
+          white-space: nowrap;
         }
 
         .sidebar-nav {
@@ -615,14 +1056,6 @@ export default function AdminDashboard() {
           position: relative;
           overflow: hidden;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .stat-card::before {
-          content: "";
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 4px;
-          border-radius: 14px 14px 0 0;
         }
 
         .stat-card:hover {
@@ -923,6 +1356,36 @@ export default function AdminDashboard() {
           box-shadow: 0 10px 22px rgba(15, 23, 42, 0.3);
         }
 
+        /* ============ FILTER PILLS ============ */
+        .filter-pills {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
+        .filter-pill {
+          padding: 8px 16px;
+          border-radius: 999px;
+          background: #fff;
+          border: 1.5px solid #e2e8f0;
+          color: #475569;
+          font-size: 0.82rem;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.2s ease;
+        }
+        .filter-pill:hover {
+          border-color: #0284c7;
+          color: #0284c7;
+        }
+        .filter-pill.active {
+          background: linear-gradient(135deg, #0284c7, #0369a1);
+          border-color: transparent;
+          color: #fff;
+          box-shadow: 0 6px 16px rgba(2, 132, 199, 0.3);
+        }
+
         /* ============ TABLE ============ */
         .table-container {
           background: #ffffff;
@@ -1057,6 +1520,28 @@ export default function AdminDashboard() {
           box-shadow: 0 6px 14px rgba(220, 38, 38, 0.3);
         }
 
+        .btn-approve {
+          background-color: #dcfce7;
+          color: #15803d;
+          margin-right: 6px;
+        }
+        .btn-approve:hover {
+          background-color: #10b981;
+          color: #fff;
+          transform: translateY(-1px);
+        }
+
+        .btn-reject {
+          background-color: #fef3c7;
+          color: #b45309;
+          margin-right: 6px;
+        }
+        .btn-reject:hover {
+          background-color: #f59e0b;
+          color: #fff;
+          transform: translateY(-1px);
+        }
+
         .empty-state {
           text-align: center;
           padding: 40px 20px;
@@ -1155,7 +1640,7 @@ export default function AdminDashboard() {
           letter-spacing: 0.5px;
         }
 
-        /* ============ FORM FIELDS — LEFT ALIGNED ============ */
+        /* ============ FORM FIELDS ============ */
         .form-field {
           margin-bottom: 14px;
           display: flex;
@@ -1238,6 +1723,11 @@ export default function AdminDashboard() {
         .modal-submit-btn:hover {
           transform: translateY(-2px);
           box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+        }
+        .modal-submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
         }
 
         /* ============ VIEW DETAILS MODAL ============ */
@@ -1361,6 +1851,123 @@ export default function AdminDashboard() {
           box-shadow: 0 10px 22px rgba(71, 85, 105, 0.3);
         }
 
+        /* ============ UPLOAD BOX ============ */
+        .upload-box,
+        .image-upload-box {
+          background: linear-gradient(135deg, #eff6ff, #dbeafe);
+          border: 2px dashed #93c5fd;
+          padding: 24px 20px;
+          border-radius: 12px;
+          text-align: center;
+          margin-bottom: 16px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .upload-box:hover,
+        .image-upload-box:hover {
+          border-color: #0284c7;
+          background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        }
+        .upload-label,
+        .image-upload-label {
+          cursor: pointer;
+          font-weight: 700;
+          color: #0284c7;
+          font-size: 0.95rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .upload-label small,
+        .image-upload-label small {
+          font-weight: 500;
+          font-size: 0.75rem;
+          color: #64748b;
+        }
+
+        .btn-download-sample {
+          background: transparent;
+          border: 1.5px solid #0284c7;
+          color: #0284c7;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 0.82rem;
+          cursor: pointer;
+          font-family: inherit;
+          margin-bottom: 16px;
+          transition: all 0.2s ease;
+        }
+        .btn-download-sample:hover {
+          background: #0284c7;
+          color: #ffffff;
+        }
+
+        .upload-error {
+          background: #fee2e2;
+          color: #b91c1c;
+          padding: 10px 14px;
+          border-radius: 8px;
+          margin-bottom: 14px;
+          font-weight: 600;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .upload-preview-title {
+          font-weight: 700;
+          font-size: 0.85rem;
+          color: #475569;
+          margin-bottom: 8px;
+        }
+
+        .upload-preview-wrap {
+          overflow-x: auto;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          max-height: 260px;
+        }
+
+        /* ============ IMAGE PREVIEW ============ */
+        .image-preview-wrap {
+          position: relative;
+          margin-bottom: 14px;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #e2e8f0;
+        }
+        .image-preview-wrap img {
+          width: 100%;
+          height: 200px;
+          object-fit: cover;
+          display: block;
+        }
+        .image-remove-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(239, 68, 68, 0.9);
+          color: #fff;
+          border: none;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.9rem;
+          display: grid;
+          place-items: center;
+          font-family: inherit;
+          transition: all 0.2s ease;
+        }
+        .image-remove-btn:hover {
+          background: #dc2626;
+          transform: scale(1.1);
+        }
+
         /* ============ RESPONSIVE ============ */
         @media (max-width: 1024px) {
           .sidebar { width: 250px; }
@@ -1392,8 +1999,14 @@ export default function AdminDashboard() {
         }
 
         @media (max-width: 480px) {
+          .sidebar-logo {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+          }
           .sidebar-brand { font-size: 1.05rem; }
-          .sidebar-sub { font-size: 0.65rem; }
+          .sidebar-sub { font-size: 0.62rem; }
           .nav-btn { padding: 11px 14px; font-size: 0.85rem; }
           .main-content { padding: 16px 12px; }
           .page-title { font-size: 1.2rem; }
@@ -1416,9 +2029,15 @@ export default function AdminDashboard() {
       {/* ============ SIDEBAR ============ */}
       <aside className="sidebar">
         <div className="sidebar-scroll">
+          {/* ✅ UPDATED: Sidebar header with circular logo */}
           <div className="sidebar-header">
-            <h2 className="sidebar-brand">❄ Chintu Ac Service</h2>
-            <div className="sidebar-sub">Admin Control Portal</div>
+            <div className="sidebar-brand-wrap">
+              <img src={logo} alt="Chintu AC Cool Care" className="sidebar-logo" />
+              <div className="sidebar-brand-text">
+                <h2 className="sidebar-brand">Chintu Cool AC</h2>
+                <div className="sidebar-sub">Admin Control Portal</div>
+              </div>
+            </div>
           </div>
 
           <div className="sidebar-nav">
@@ -1433,6 +2052,30 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('businesses')}
             >
               🏢 Business Management
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'blogs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('blogs')}
+            >
+              📝 Blog Management
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'comments' ? 'active' : ''}`}
+              onClick={() => setActiveTab('comments')}
+            >
+              💬 Comments
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'subscribers' ? 'active' : ''}`}
+              onClick={() => setActiveTab('subscribers')}
+            >
+              📬 Subscribers
+            </button>
+            <button
+              className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              📈 Graph Reports
             </button>
           </div>
 
@@ -1505,7 +2148,12 @@ export default function AdminDashboard() {
         <div className="page-header">
           <div>
             <h2 className="page-title">
-              {activeTab === 'dashboard' ? '📋 Customer Inquiries & Leads' : '🏢 Registered Businesses'}
+              {activeTab === 'dashboard' && '📋 Customer Inquiries & Leads'}
+              {activeTab === 'businesses' && '🏢 Registered Businesses'}
+              {activeTab === 'blogs' && '📝 Blog Management'}
+              {activeTab === 'comments' && '💬 Comment Moderation'}
+              {activeTab === 'subscribers' && '📬 Newsletter Subscribers'}
+              {activeTab === 'reports' && '📈 Graph Reports & Analytics'}
             </h2>
             <div className="page-breadcrumb">
               Chintu Ac Service / <strong>{activeTab.toUpperCase()}</strong>
@@ -1513,12 +2161,47 @@ export default function AdminDashboard() {
           </div>
 
           <div className="header-actions">
-            <button className="btn-add-business" onClick={() => setIsBusinessModalOpen(true)}>
-              + Add Business
-            </button>
-            <button className="btn-add-booking" onClick={() => setIsAddModalOpen(true)}>
-              + Add Booking
-            </button>
+            {activeTab === 'businesses' && (
+              <>
+                <button className="btn-add-business" onClick={() => setIsUploadModalOpen(true)}>
+                  📥 Upload Excel
+                </button>
+                <button className="btn-add-business" onClick={() => setIsBusinessModalOpen(true)}>
+                  + Add Business
+                </button>
+              </>
+            )}
+            {activeTab === 'dashboard' && (
+              <button className="btn-add-booking" onClick={() => setIsAddModalOpen(true)}>
+                + Add Booking
+              </button>
+            )}
+            {activeTab === 'blogs' && (
+              <button
+                className="btn-add-booking"
+                onClick={() => {
+                  setEditingBlog(null);
+                  setNewBlog({
+                    title: '',
+                    slug: '',
+                    category: 'AC Repair',
+                    author: '',
+                    excerpt: '',
+                    content: '',
+                    imageUrl: '',
+                    status: 'Draft'
+                  });
+                  setIsBlogModalOpen(true);
+                }}
+              >
+                + Add Blog
+              </button>
+            )}
+            {activeTab === 'subscribers' && (
+              <button className="btn-add-business" onClick={exportSubscribersCSV}>
+                ⬇ Export CSV
+              </button>
+            )}
           </div>
         </div>
 
@@ -1797,6 +2480,366 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+
+        {/* ============ TAB 3: BLOGS ============ */}
+        {activeTab === 'blogs' && (
+          <>
+            <div className="search-bar-wrap">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Search blogs by title, author or category..."
+                value={blogSearch}
+                onChange={(e) => setBlogSearch(e.target.value)}
+              />
+              <button className="search-btn" onClick={fetchBlogs}>
+                Search
+              </button>
+            </div>
+
+            <div className="table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Cover</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                    <th>Views</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blogs.length > 0 ? (
+                    blogs.map((b) => (
+                      <tr key={b._id}>
+                        <td>
+                          {b.imageUrl ? (
+                            <img
+                              src={getImageUrl(b.imageUrl)}
+                              alt=""
+                              style={{
+                                width: 60,
+                                height: 40,
+                                objectFit: 'cover',
+                                borderRadius: 6
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 60,
+                                height: 40,
+                                background: '#e0f2fe',
+                                borderRadius: 6,
+                                display: 'grid',
+                                placeItems: 'center',
+                                fontSize: '1.2rem'
+                              }}
+                            >
+                              📝
+                            </div>
+                          )}
+                        </td>
+                        <td><strong>{b.title}</strong></td>
+                        <td><span className="service-tag">{b.category}</span></td>
+                        <td>{b.author}</td>
+                        <td>
+                          <span
+                            className={`service-tag ${b.status === 'Published' ? '' : 'service-tag-warn'}`}
+                          >
+                            {b.status}
+                          </span>
+                        </td>
+                        <td>👁 {b.views || 0}</td>
+                        <td>{new Date(b.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <button
+                            className="admin-action-btn btn-view"
+                            onClick={() => handleEditBlog(b)}
+                          >
+                            ✏ Edit
+                          </button>
+                          <button
+                            className="admin-action-btn btn-delete"
+                            onClick={() => handleBlogDelete(b._id)}
+                          >
+                            🗑 Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8">
+                        <div className="empty-state">
+                          <span className="empty-state-icon">📝</span>
+                          No blogs yet. Click "+ Add Blog" to create your first post!
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ============ TAB 4: COMMENTS ============ */}
+        {activeTab === 'comments' && (
+          <>
+            <div className="search-bar-wrap">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Search comments by name, email, blog title..."
+                value={commentSearch}
+                onChange={(e) => setCommentSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="filter-pills">
+              {['All', 'Pending', 'Approved', 'Rejected'].map((s) => (
+                <button
+                  key={s}
+                  className={`filter-pill ${commentFilter === s ? 'active' : ''}`}
+                  onClick={() => setCommentFilter(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <div className="table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Comment</th>
+                    <th>Blog</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredComments.length > 0 ? (
+                    filteredComments.map((c) => {
+                      const sClass =
+                        c.status === 'Approved' ? 'status-resolved' :
+                        c.status === 'Rejected' ? 'status-suspended' : 'status-pending';
+
+                      return (
+                        <tr key={c._id}>
+                          <td><strong>{c.name}</strong></td>
+                          <td>
+                            <a href={`mailto:${c.email}`} className="contact-link">
+                              ✉ {c.email}
+                            </a>
+                          </td>
+                          <td style={{ maxWidth: 300 }}>{c.message}</td>
+                          <td>{c.blog?.title || 'Deleted blog'}</td>
+                          <td>
+                            <span className={`service-tag ${sClass}`}>{c.status}</span>
+                          </td>
+                          <td>{new Date(c.createdAt).toLocaleDateString()}</td>
+                          <td>
+                            {c.status !== 'Approved' && (
+                              <button
+                                className="admin-action-btn btn-approve"
+                                onClick={() => handleCommentStatus(c._id, 'Approved')}
+                              >
+                                ✓ Approve
+                              </button>
+                            )}
+                            {c.status !== 'Rejected' && (
+                              <button
+                                className="admin-action-btn btn-reject"
+                                onClick={() => handleCommentStatus(c._id, 'Rejected')}
+                              >
+                                ✗ Reject
+                              </button>
+                            )}
+                            <button
+                              className="admin-action-btn btn-delete"
+                              onClick={() => handleCommentDelete(c._id)}
+                            >
+                              🗑
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="7">
+                        <div className="empty-state">
+                          <span className="empty-state-icon">💬</span>
+                          No comments found.
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ============ TAB 5: SUBSCRIBERS ============ */}
+        {activeTab === 'subscribers' && (
+          <>
+            <div className="search-bar-wrap">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="🔍 Search by email..."
+                value={subscriberSearch}
+                onChange={(e) => setSubscriberSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="table-container">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Subscribed On</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSubscribers.length > 0 ? (
+                    filteredSubscribers.map((s) => (
+                      <tr key={s._id}>
+                        <td><strong>{s.email}</strong></td>
+                        <td>
+                          <span
+                            className={`service-tag ${s.status === 'Active' ? '' : 'service-tag-warn'}`}
+                          >
+                            {s.status}
+                          </span>
+                        </td>
+                        <td>{s.source}</td>
+                        <td>{new Date(s.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <button
+                            className="admin-action-btn btn-delete"
+                            onClick={() => handleSubscriberDelete(s._id)}
+                          >
+                            🗑 Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5">
+                        <div className="empty-state">
+                          <span className="empty-state-icon">📬</span>
+                          No subscribers yet.
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ============ TAB 6: REPORTS ============ */}
+        {activeTab === 'reports' && (
+          <>
+            <div className="chart-card" style={{ marginBottom: '20px' }}>
+              <div className="chart-header">
+                <h3 className="chart-title">📈 Business Growth Report</h3>
+                <div className="chart-range-group">
+                  {['day', 'month', 'year'].map((r) => (
+                    <button
+                      key={r}
+                      className={`chart-range-btn ${reportRange === r ? 'active' : ''}`}
+                      onClick={() => setReportRange(r)}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="chart-body">
+                {businessReport.labels.length > 0 ? (
+                  <Line
+                    data={businessReport}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'top',
+                          labels: {
+                            font: { size: 12, weight: '600' },
+                            color: '#475569',
+                            usePointStyle: true,
+                            padding: 15
+                          }
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(226, 232, 240, 0.6)' },
+                          ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        x: {
+                          grid: { display: false },
+                          ticks: { color: '#64748b', font: { size: 11 } }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="chart-loading">Loading business report...</div>
+                )}
+              </div>
+            </div>
+
+            <div className="chart-card">
+              <div className="chart-header">
+                <h3 className="chart-title">🥧 Service Distribution</h3>
+              </div>
+              <div className="chart-body" style={{ height: '360px' }}>
+                {serviceReport.labels.length > 0 ? (
+                  <Doughnut
+                    data={serviceReport}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'right',
+                          labels: {
+                            usePointStyle: true,
+                            padding: 14,
+                            font: { size: 12, weight: '600' },
+                            color: '#475569'
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="chart-loading">Loading service distribution...</div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       {/* ============ VIEW INQUIRY DETAILS MODAL ============ */}
@@ -1805,13 +2848,27 @@ export default function AdminDashboard() {
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewItem(null)}>✕</button>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingRight: '40px' }}>
-              <h3 className="modal-title" style={{ margin: 0, paddingRight: 0 }}>📋 Inquiry Details</h3>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+                paddingRight: '40px'
+              }}
+            >
+              <h3 className="modal-title" style={{ margin: 0, paddingRight: 0 }}>
+                📋 Inquiry Details
+              </h3>
               <span
                 className="modal-status-badge"
                 style={{
-                  background: viewItem.status === 'Resolved' ? '#dcfce7' : viewItem.status === 'In Progress' ? '#e0f2fe' : '#fef3c7',
-                  color: viewItem.status === 'Resolved' ? '#15803d' : viewItem.status === 'In Progress' ? '#0369a1' : '#b45309'
+                  background:
+                    viewItem.status === 'Resolved' ? '#dcfce7' :
+                    viewItem.status === 'In Progress' ? '#e0f2fe' : '#fef3c7',
+                  color:
+                    viewItem.status === 'Resolved' ? '#15803d' :
+                    viewItem.status === 'In Progress' ? '#0369a1' : '#b45309'
                 }}
               >
                 {viewItem.status || 'Pending'}
@@ -1825,14 +2882,16 @@ export default function AdminDashboard() {
                 <a href={`tel:${viewItem.mobile}`} className="contact-link">📞 {viewItem.mobile}</a>
               </div>
               <div className="detail-row"><strong>Email:</strong> {viewItem.email || 'N/A'}</div>
-              <div className="detail-row"><strong>State & City:</strong> {viewItem.city}, {viewItem.state || 'Delhi (NCT)'}</div>
+              <div className="detail-row">
+                <strong>State & City:</strong> {viewItem.city}, {viewItem.state || 'Delhi (NCT)'}
+              </div>
               <div className="detail-row"><strong>Service:</strong> {viewItem.serviceType}</div>
               <div className="detail-row">
-                <strong>Visit Date:</strong>
+                <strong>Visit Date:</strong>{' '}
                 {viewItem.date ? new Date(viewItem.date).toLocaleDateString() : 'Immediate Visit'}
               </div>
               <div className="detail-row">
-                <strong>Received On:</strong>
+                <strong>Received On:</strong>{' '}
                 {new Date(viewItem.createdAt).toLocaleString()}
               </div>
 
@@ -2046,6 +3105,211 @@ export default function AdminDashboard() {
                 🚀 Register Business
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============ BLOG MODAL ============ */}
+      {isBlogModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsBlogModalOpen(false)}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: '640px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setIsBlogModalOpen(false)}>✕</button>
+            <h3 className="modal-title">
+              {editingBlog ? '✏ Edit Blog' : '📝 Create New Blog'}
+            </h3>
+
+            <form onSubmit={handleBlogSubmit}>
+              <div className="form-field">
+                <label>Blog Title *</label>
+                <input
+                  type="text" required
+                  placeholder="e.g. 5 Tips to Maintain Your AC in Summer"
+                  value={newBlog.title}
+                  onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Category *</label>
+                <select
+                  value={newBlog.category}
+                  onChange={(e) => setNewBlog({ ...newBlog, category: e.target.value })}
+                >
+                  <option>AC Repair</option>
+                  <option>Refrigerator</option>
+                  <option>Washing Machine</option>
+                  <option>Microwave</option>
+                  <option>Tips & Tricks</option>
+                  <option>News</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>Author Name *</label>
+                <input
+                  type="text" required
+                  placeholder="Author full name"
+                  value={newBlog.author}
+                  onChange={(e) => setNewBlog({ ...newBlog, author: e.target.value })}
+                />
+              </div>
+
+              {/* IMAGE UPLOAD SECTION */}
+              <div className="form-field">
+                <label>Cover Image</label>
+                {newBlog.imageUrl ? (
+                  <div className="image-preview-wrap">
+                    <img src={getImageUrl(newBlog.imageUrl)} alt="Cover preview" />
+                    <button
+                      type="button"
+                      className="image-remove-btn"
+                      onClick={() => setNewBlog({ ...newBlog, imageUrl: '' })}
+                      title="Remove image"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="image-upload-box">
+                    <input
+                      type="file"
+                      id="blog-image"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                    <label htmlFor="blog-image" className="image-upload-label">
+                      <span style={{ fontSize: '1.6rem' }}>🖼</span>
+                      {uploadingImage ? 'Uploading...' : 'Click to upload cover image'}
+                      <small>
+                        JPG, PNG, WEBP (max 5MB) — auto-resized to 1200×630
+                      </small>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label>Short Excerpt</label>
+                <textarea
+                  rows="2"
+                  placeholder="A short summary shown in blog list..."
+                  value={newBlog.excerpt}
+                  onChange={(e) => setNewBlog({ ...newBlog, excerpt: e.target.value })}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Content *</label>
+                <textarea
+                  rows="6" required
+                  placeholder="Write full blog content here..."
+                  value={newBlog.content}
+                  onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Status</label>
+                <select
+                  value={newBlog.status}
+                  onChange={(e) => setNewBlog({ ...newBlog, status: e.target.value })}
+                >
+                  <option value="Draft">Draft (Not visible)</option>
+                  <option value="Published">Published (Live)</option>
+                </select>
+              </div>
+
+              <button type="submit" className="modal-submit-btn blue">
+                💾 {editingBlog ? 'Update Blog' : 'Save Blog'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============ EXCEL UPLOAD MODAL ============ */}
+      {isUploadModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsUploadModalOpen(false)}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: '720px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setIsUploadModalOpen(false)}>✕</button>
+            <h3 className="modal-title">📥 Upload Businesses from Excel</h3>
+
+            <div className="upload-box">
+              <input
+                type="file"
+                id="excel-upload"
+                accept=".xlsx,.xls,.csv"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+              <label htmlFor="excel-upload" className="upload-label">
+                <span style={{ fontSize: '1.8rem' }}>📎</span>
+                {uploadFile ? uploadFile.name : 'Click to select Excel file'}
+                <small>Supports .xlsx, .xls, .csv (max 5MB)</small>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={downloadSampleExcel}
+              className="btn-download-sample"
+            >
+              ⬇ Download Sample Template
+            </button>
+
+            {uploadError && (
+              <div className="upload-error">
+                <span>⚠</span>
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            {uploadPreview.length > 0 && (
+              <div>
+                <p className="upload-preview-title">
+                  👀 Preview (first {uploadPreview.length} rows):
+                </p>
+                <div className="upload-preview-wrap">
+                  <table className="admin-table" style={{ fontSize: '0.78rem' }}>
+                    <thead>
+                      <tr>
+                        {Object.keys(uploadPreview[0]).map((k) => (
+                          <th key={k}>{k}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {uploadPreview.map((row, i) => (
+                        <tr key={i}>
+                          {Object.values(row).map((v, j) => (
+                            <td key={j}>{String(v)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="modal-submit-btn orange"
+              onClick={handleExcelUpload}
+              disabled={isUploading || !uploadFile}
+            >
+              {isUploading ? '⏳ Uploading...' : '🚀 Import Businesses'}
+            </button>
           </div>
         </div>
       )}

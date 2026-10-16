@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api';
+import logo from '../assets/logo.jpeg'; // ✅ NEW: Logo import
 
 export default function AdminLogin() {
   const [creds, setCreds] = useState({ username: '', password: '' });
@@ -152,39 +153,63 @@ export default function AdminLogin() {
           margin-bottom: 20px;
         }
 
+        /* ✅ UPDATED: Wrapper for circular image */
         .login-logo {
-          width: 68px;
-          height: 68px;
+          position: relative;
+          width: 76px;
+          height: 76px;
           display: grid;
           place-items: center;
-          font-size: 2rem;
-          background: linear-gradient(135deg, #0284c7, #0369a1 60%, #0ea5e9);
-          border-radius: 20px;
-          box-shadow:
-            0 14px 30px rgba(2, 132, 199, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-          color: #ffffff;
-          position: relative;
+          border-radius: 50%;
           animation: logoPulse 3s ease-in-out infinite;
         }
 
+        /* Outer animated ring */
         .login-logo::after {
           content: "";
           position: absolute;
-          inset: -6px;
-          border-radius: 24px;
-          border: 2px solid rgba(2, 132, 199, 0.2);
+          inset: -8px;
+          border-radius: 50%;
+          border: 2px solid rgba(2, 132, 199, 0.25);
           animation: logoRing 3s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        /* ✅ NEW: Circular logo image */
+        .login-logo-img {
+          width: 76px;
+          height: 76px;
+          min-width: 76px;
+          min-height: 76px;
+          aspect-ratio: 1 / 1;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 50%;
+          display: block;
+          background: #ffffff;
+          border: 3px solid #ffffff;
+          box-shadow:
+            0 14px 30px rgba(2, 132, 199, 0.35),
+            0 0 0 3px rgba(2, 132, 199, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .login-logo:hover .login-logo-img {
+          transform: scale(1.05) rotate(-4deg);
+          box-shadow:
+            0 18px 40px rgba(2, 132, 199, 0.45),
+            0 0 0 4px rgba(2, 132, 199, 0.25);
         }
 
         @keyframes logoPulse {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
+          50% { transform: scale(1.03); }
         }
 
         @keyframes logoRing {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0; transform: scale(1.15); }
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 0; transform: scale(1.2); }
         }
 
         .login-header {
@@ -476,10 +501,16 @@ export default function AdminLogin() {
           }
 
           .login-logo {
-            width: 58px;
-            height: 58px;
-            font-size: 1.7rem;
-            border-radius: 16px;
+            width: 62px;
+            height: 62px;
+          }
+
+          .login-logo-img {
+            width: 62px;
+            height: 62px;
+            min-width: 62px;
+            min-height: 62px;
+            border-width: 3px;
           }
 
           .login-title {
@@ -512,7 +543,13 @@ export default function AdminLogin() {
       <div className="login-card">
         {/* Logo */}
         <div className="login-logo-wrap">
-          <div className="login-logo">❄</div>
+          <div className="login-logo">
+            <img
+              src={logo}
+              alt="Chintu AC Cool Care"
+              className="login-logo-img"
+            />
+          </div>
         </div>
 
         {/* Header */}

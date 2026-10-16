@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import logo from '../assets/logo.jpeg'; // ✅ NEW: Logo import
 
 export default function Services() {
   const [activeTab, setActiveTab] = useState('all');
@@ -254,7 +255,6 @@ export default function Services() {
           overflow-x: hidden;
         }
 
-        /* 🔥 FULL WIDTH ROOT - kills default body margins */
         .services-page {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           color: var(--text-main);
@@ -265,7 +265,7 @@ export default function Services() {
           position: relative;
         }
 
-        /* ============ NAVBAR - FULL WIDTH ============ */
+        /* ============ NAVBAR ============ */
         .services-page .navbar {
           display: flex;
           align-items: center;
@@ -283,20 +283,47 @@ export default function Services() {
           flex-wrap: wrap;
         }
 
+        /* ✅ UPDATED: Logo with circular image */
         .services-page .logo {
-          font-size: 1.35rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 1.2rem;
           font-weight: 800;
           color: var(--primary);
-          display: flex;
-          align-items: center;
-          gap: 8px;
           text-decoration: none;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.02em;
           white-space: nowrap;
           flex-shrink: 0;
         }
 
-        .services-page .logo span { font-size: 1.5rem; }
+        .services-page .logo-img {
+          width: 46px;
+          height: 46px;
+          min-width: 46px;
+          min-height: 46px;
+          aspect-ratio: 1 / 1;
+          object-fit: cover;
+          object-position: center;
+          border-radius: 50%;
+          display: block;
+          flex-shrink: 0;
+          background: #ffffff;
+          border: 2px solid rgba(2, 132, 199, 0.22);
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+          transition: all 0.3s ease;
+        }
+
+        .services-page .logo:hover .logo-img {
+          transform: rotate(-6deg) scale(1.06);
+          border-color: var(--primary);
+          box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+        }
+
+        .services-page .logo-text {
+          font-weight: 800;
+          white-space: nowrap;
+        }
 
         .services-page .navbar nav {
           display: flex;
@@ -354,7 +381,7 @@ export default function Services() {
           color: #fff;
         }
 
-        /* ============ HERO - FULL WIDTH ============ */
+        /* ============ HERO ============ */
         .services-page .services-hero {
           position: relative;
           text-align: center;
@@ -464,7 +491,7 @@ export default function Services() {
           transform: translateY(-2px);
         }
 
-        /* ============ CONTENT WRAPPER - FULL WIDTH ============ */
+        /* ============ CONTENT WRAPPER ============ */
         .services-page .services-content-wrapper {
           width: 100%;
           max-width: 100%;
@@ -473,7 +500,6 @@ export default function Services() {
           background: #ffffff;
         }
 
-        /* Inner constraint for readability */
         .services-page .category-block {
           max-width: var(--content-width);
           margin: 0 auto 4rem;
@@ -709,7 +735,7 @@ export default function Services() {
           line-height: 1;
         }
 
-        /* ============ GUARANTEES - FULL WIDTH ============ */
+        /* ============ GUARANTEES ============ */
         .services-page .service-guarantees {
           padding: 4.5rem 3%;
           background:
@@ -1004,7 +1030,7 @@ export default function Services() {
           100% { box-shadow: 0 12px 28px rgba(37, 211, 102, 0.4), 0 0 0 0 rgba(37, 211, 102, 0); }
         }
 
-        /* ============ FOOTER - FULL WIDTH ============ */
+        /* ============ FOOTER ============ */
         .services-page .footer {
           background:
             radial-gradient(circle at 85% 0%, rgba(2, 132, 199, 0.2), transparent 30%),
@@ -1057,14 +1083,26 @@ export default function Services() {
           transform: translateX(4px);
         }
 
+        /* ✅ Footer logo with circular image */
         .services-page .footer .logo {
           color: #ffffff;
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           margin-bottom: 12px;
           white-space: normal;
         }
 
-        .services-page .footer .logo span { color: #38bdf8; }
+        .services-page .footer .logo-img {
+          border: 2px solid rgba(56, 189, 248, 0.4);
+          box-shadow: 0 6px 16px rgba(56, 189, 248, 0.25);
+          width: 52px;
+          height: 52px;
+          min-width: 52px;
+          min-height: 52px;
+        }
+
+        .services-page .footer .logo-text {
+          color: #ffffff;
+        }
 
         .services-page .footer .logo + p {
           font-size: 0.9rem;
@@ -1082,14 +1120,8 @@ export default function Services() {
 
         /* ============ RESPONSIVE ============ */
         @media (max-width: 992px) {
-          .services-page .navbar {
-            padding: 1rem 3%;
-          }
-
-          .services-page .navbar nav {
-            gap: 18px;
-          }
-
+          .services-page .navbar { padding: 1rem 3%; }
+          .services-page .navbar nav { gap: 18px; }
           .services-page .navbar nav a { font-size: 0.95rem; }
         }
 
@@ -1099,9 +1131,7 @@ export default function Services() {
             justify-content: center;
           }
 
-          .services-page .logo {
-            font-size: 1.15rem;
-          }
+          .services-page .logo { font-size: 1.05rem; }
 
           .services-page .navbar nav {
             order: 3;
@@ -1137,15 +1167,11 @@ export default function Services() {
             gap: 1.25rem;
           }
 
-          .services-page .issues-list {
-            grid-template-columns: 1fr;
-          }
+          .services-page .issues-list { grid-template-columns: 1fr; }
 
           .services-page .service-guarantees { padding: 3rem 4%; }
 
-          .services-page .footer-grid {
-            padding: 0 4% 2rem;
-          }
+          .services-page .footer-grid { padding: 0 4% 2rem; }
 
           .services-page .whatsapp-float {
             width: 52px;
@@ -1160,6 +1186,22 @@ export default function Services() {
           .services-page .sub-badge { font-size: 0.7rem; padding: 0.4rem 0.95rem; }
           .services-page .services-hero h1 { font-size: 1.65rem; }
           .services-page .services-hero { padding: 2.5rem 4% 2rem; }
+
+          .services-page .logo { font-size: 1rem; gap: 8px; }
+          .services-page .logo-img {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+          }
+          .services-page .logo-text { font-size: 0.9rem; }
+
+          .services-page .footer .logo-img {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+          }
 
           .services-page .tab-filters { gap: 8px; }
           .services-page .tab-filters button {
@@ -1196,7 +1238,8 @@ export default function Services() {
       {/* ============ NAVBAR ============ */}
       <header className="navbar">
         <Link to="/" className="logo">
-          <span>❄</span> Chintu Cool AC Service
+          <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+          <span className="logo-text">Chintu Cool AC Service</span>
         </Link>
         <nav>
           <Link to="/">Home</Link>
@@ -1396,9 +1439,10 @@ export default function Services() {
       <footer className="footer">
         <div className="footer-grid">
           <div className="footer-col">
-            <div className="logo">
-              <span>❄</span> Chintu Cool AC Service
-            </div>
+            <Link to="/" className="logo">
+              <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+              <span className="logo-text">Chintu Cool AC Service</span>
+            </Link>
             <p>Reliable doorstep installation, cleaning, and repair solutions for all major household cooling and washing appliances.</p>
           </div>
 
