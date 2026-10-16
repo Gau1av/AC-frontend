@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API, { getImageUrl } from '../api';
 import CommentsSection from '../components/CommentsSection';
-import NewsletterForm from './components/NewsletterForm';
+import NewsletterForm from '../components/NewsLetterForm';
 
 export default function BlogDetail() {
   const { slug } = useParams();

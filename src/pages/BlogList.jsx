@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API, { getImageUrl } from '../api';
 import CommentsSection from '../components/CommentsSection';
-import NewsletterForm from './components/NewsletterForm';
+import NewsletterForm from '../components/NewsLetterForm';
 import logo from '../assets/logo.jpeg';
 
 export default function BlogDetail() {
@@ -108,22 +108,62 @@ export default function BlogDetail() {
     );
   }
 
-  const readTime = Math.max(1, Math.ceil((blog.content || '').split(' ').length / 200));
+  const readTime = Math.max(
+    1,
+    Math.ceil((blog.content || '').split(/\s+/).filter(Boolean).length / 200)
+  );
   const formattedDate = new Date(blog.createdAt).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   });
 
-  const renderContent = (content) =>
-    content.split('\n').map((line, i) => {
+  const renderContent = (content) => {
+    if (!content) return null;
+    const lines = content.split('\n');
+    const elements = [];
+    let currentList = [];
+
+    lines.forEach((line, index) => {
       const trimmed = line.trim();
-      if (!trimmed) return <br key={i} />;
-      if (trimmed.startsWith('## ')) return <h2 key={i}>{trimmed.replace('## ', '')}</h2>;
-      if (trimmed.startsWith('# ')) return <h1 key={i}>{trimmed.replace('# ', '')}</h1>;
-      if (trimmed.startsWith('- ')) return <li key={i}>{trimmed.replace('- ', '')}</li>;
-      return <p key={i}>{trimmed}</p>;
+
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        currentList.push(<li key={`li-${index}`}>{trimmed.substring(2)}</li>);
+        return;
+      }
+
+      if (currentList.length > 0) {
+        elements.push(
+          <ul key={`ul-${index}`} className="blog-detail-list">
+            {currentList}
+          </ul>
+        );
+        currentList = [];
+      }
+
+      if (!trimmed) {
+        elements.push(<br key={`br-${index}`} />);
+      } else if (trimmed.startsWith('### ')) {
+        elements.push(<h3 key={`h3-${index}`}>{trimmed.replace('### ', '')}</h3>);
+      } else if (trimmed.startsWith('## ')) {
+        elements.push(<h2 key={`h2-${index}`}>{trimmed.replace('## ', '')}</h2>);
+      } else if (trimmed.startsWith('# ')) {
+        elements.push(<h1 key={`h1-${index}`}>{trimmed.replace('# ', '')}</h1>);
+      } else {
+        elements.push(<p key={`p-${index}`}>{trimmed}</p>);
+      }
     });
+
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key="ul-last" className="blog-detail-list">
+          {currentList}
+        </ul>
+      );
+    }
+
+    return elements;
+  };
 
   return (
     <div className="blog-detail-page">
@@ -306,7 +346,7 @@ export default function BlogDetail() {
           font-size: 2.3rem;
           font-weight: 900;
           margin: 0 0 20px;
-          line-height: 1.2;
+          line-height: 1.25;
           letter-spacing: -0.02em;
         }
         .blog-detail-meta {
@@ -346,6 +386,7 @@ export default function BlogDetail() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block;
         }
 
         .blog-detail-article {
@@ -373,7 +414,8 @@ export default function BlogDetail() {
           margin: 0 0 18px;
         }
         .blog-detail-content h1,
-        .blog-detail-content h2 {
+        .blog-detail-content h2,
+        .blog-detail-content h3 {
           color: #0f172a;
           font-weight: 800;
           margin: 32px 0 14px;
@@ -382,15 +424,21 @@ export default function BlogDetail() {
         }
         .blog-detail-content h1 { font-size: 1.75rem; }
         .blog-detail-content h2 { font-size: 1.4rem; }
-        .blog-detail-content li {
+        .blog-detail-content h3 { font-size: 1.2rem; }
+
+        .blog-detail-list {
+          padding-left: 0;
+          margin: 0 0 20px;
+        }
+        .blog-detail-list li {
           list-style: none;
           position: relative;
-          padding-left: 26px;
+          padding-left: 28px;
           margin-bottom: 10px;
           font-size: 1.05rem;
           color: #334155;
         }
-        .blog-detail-content li::before {
+        .blog-detail-list li::before {
           content: "✓";
           position: absolute;
           left: 0;
@@ -522,11 +570,13 @@ export default function BlogDetail() {
           place-items: center;
           font-size: 2.5rem;
           opacity: 0.85;
+          overflow: hidden;
         }
         .related-card-img img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block;
         }
         .related-card-body { padding: 16px 18px 18px; }
         .related-card-title {
@@ -817,7 +867,7 @@ export default function BlogDetail() {
               <span className="blog-share-label">Share:</span>
               <a
                 className="blog-share-btn"
-                href={`https://wa.me/?text=${encodeURIComponent(blog.title + ' ' + window.location.href)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`${blog.title}\n${window.location.href}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Share on WhatsApp"
@@ -843,6 +893,7 @@ export default function BlogDetail() {
                 📘
               </a>
               <button
+                type="button"
                 className="blog-share-btn"
                 title="Copy link"
                 onClick={() => {
@@ -858,7 +909,7 @@ export default function BlogDetail() {
       </div>
 
       {/* COMMENTS */}
-      <CommentsSection blogId={blog._id} initialComments={comments} />
+      {blog._id && <CommentsSection blogId={blog._id} initialComments={comments} />}
 
       {/* CTA */}
       <div className="blog-detail-cta">
@@ -880,7 +931,7 @@ export default function BlogDetail() {
           <h2 className="blog-related-title">Related Articles</h2>
           <div className="blog-related-grid">
             {related.map((r) => (
-              <Link key={r._id} to={`/blog/${r.slug}`} className="related-card">
+              <Link key={r._id} to={`/blog/${r.slug || r._id}`} className="related-card">
                 <div className="related-card-img">
                   {r.imageUrl ? <img src={getImageUrl(r.imageUrl)} alt={r.title} /> : '📝'}
                 </div>
