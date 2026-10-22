@@ -6,7 +6,12 @@ import "./Home.css";
 // Banner images
 import banner1 from "../assets/2.jpeg";
 import banner2 from "../assets/3.jpeg";
-import banner3 from "../assets/WhatsApp Image 2026-09-05 at 15.45.15.jpeg";
+import banner3 from "../assets/4.jpeg";
+import banner4 from "../assets/5.jpeg";
+import banner5 from "../assets/6.jpeg";
+import banner6 from "../assets/7.jpeg";
+import banner8 from "../assets/8.jpeg";
+import banner7 from "../assets/WhatsApp Image 2026-09-05 at 15.45.15.jpeg";
 import logo from "../assets/logo.jpeg";
 
 // 29 States & UT fixed list
@@ -71,7 +76,7 @@ export default function Home() {
   const [blogsLoading, setBlogsLoading] = useState(true);
 
   // Slider banner state
-  const bannerImages = [banner1, banner2, banner3];
+  const bannerImages = [banner1, banner2, banner3, banner4, banner5, banner6, banner7, banner8];
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -87,16 +92,13 @@ export default function Home() {
     const fetchHomeBlogs = async () => {
       try {
         setBlogsLoading(true);
-        // Public API endpoint for blogs (fallback to /api/admin/blogs if public not available)
         const res = await API.get("/api/blogs?status=Published");
         const allBlogs = res.data.data || res.data || [];
-        // Only take published and limit to top 3 for clean layout
         const published = allBlogs
           .filter((b) => !b.status || b.status === "Published")
           .slice(0, 3);
         setLatestBlogs(published);
       } catch (err) {
-        // Fallback try to admin endpoint
         try {
           const fallbackRes = await API.get("/api/admin/blogs");
           const blogsData = fallbackRes.data.data || [];
@@ -123,6 +125,7 @@ export default function Home() {
     setCurrentSlide((prev) => (prev + 1) % bannerImages.length);
   };
 
+  // ✅ Updated Services List including Motors, Fans & Electrical Works
   const services = [
     {
       icon: "❄️",
@@ -140,9 +143,29 @@ export default function Home() {
       description: "Comprehensive repair for front-load, top-load, and semi-automatic washing machines."
     },
     {
+      icon: "🔄",
+      title: "Motor Repair & Rewinding",
+      description: "Water pump, cooler motor, and submersible motor inspection, winding & repair."
+    },
+    {
+      icon: "🪭",
+      title: "Fan Repair & Installation",
+      description: "Ceiling fan, exhaust fan, table fan capacitor replacement, noise fix & fitting."
+    },
+    {
+      icon: "⚡",
+      title: "House Wiring",
+      description: "New house electrical piping, full wiring, short circuit diagnosis & MCB board setup."
+    },
+    {
+      icon: "🛠️",
+      title: "All Electric Works",
+      description: "Switchboard fitting, inverter-battery wiring, lights, earthing & general electric repairs."
+    },
+    {
       icon: "⚙️",
       title: "Preventive Maintenance",
-      description: "Regular checkups and routine servicing for optimal cooling and long appliance life."
+      description: "Routine checkups and servicing for optimal cooling, power efficiency, and long appliance life."
     }
   ];
 
@@ -219,7 +242,7 @@ export default function Home() {
       {/* Promotional Strip */}
       <div className="promo-banner">
         <div className="promo-content">
-          <span>🔥 Special Offer!</span> Up to 20% OFF on AC Deep Cleaning, Refrigerator & Washing Machine Repairs.
+          <span>🔥 Special Offer!</span> Up to 20% OFF on AC Cleaning, Motors, House Wiring & Appliance Repairs.
         </div>
         <button onClick={() => handleOpenModalWithService()} className="promo-btn">
           Claim Offer
@@ -256,11 +279,10 @@ export default function Home() {
       {/* Hero Section */}
       <section className="hero-section" id="home">
         <div className="hero-content">
-          <p className="tagline">EXPERT APPLIANCE CARE</p>
-          <h1>Reliable Doorstep Appliance Repair</h1>
+          <p className="tagline">EXPERT APPLIANCE & ELECTRICAL CARE</p>
+          <h1>Reliable Doorstep Appliance & Electric Repair</h1>
           <p>
-            AC, Refrigerator & Washing Machine Service by Certified Technicians with doorstep installation,
-            fast diagnosis, and authentic spare parts.
+            AC, Refrigerator, Washing Machine, Motors, Fans, and Complete House Wiring by Certified Technicians with genuine spare parts and fast diagnosis.
           </p>
 
           <div className="hero-buttons">
@@ -279,7 +301,7 @@ export default function Home() {
             </div>
             <div>
               <strong>8,000+</strong>
-              <small>Appliances Serviced</small>
+              <small>Services Completed</small>
             </div>
             <div>
               <strong>4.9 ★</strong>
@@ -289,7 +311,7 @@ export default function Home() {
         </div>
 
         <div className="hero-card">
-          <div className="ac-circle">❄️</div>
+          <div className="ac-circle">⚡</div>
           <h3>Express Care</h3>
           <p>Fast • Reliable • Affordable</p>
           <a
@@ -307,9 +329,9 @@ export default function Home() {
       <section className="services" id="services">
         <div className="section-heading">
           <p className="tagline">OUR SERVICES</p>
-          <h2>Complete Home Appliance Care</h2>
+          <h2>Complete Home Appliance & Electrical Solutions</h2>
           <p>
-            Everything you need to keep your AC, Refrigerator, and Washing Machine running smoothly.
+            From AC and Fridge maintenance to water motors, ceiling fans, and full house electrical wiring.
           </p>
         </div>
 
@@ -340,8 +362,7 @@ export default function Home() {
           <p className="tagline">WHY CHOOSE US</p>
           <h2>Professional Service You Can Trust</h2>
           <p>
-            Our trained technicians provide reliable repairs and maintenance with high quality
-            workmanship and clear pricing.
+            Our certified electricians and appliance technicians deliver safe, long-lasting fixes with clear upfront pricing.
           </p>
 
           <div className="features">
@@ -349,7 +370,7 @@ export default function Home() {
               <span>✓</span>
               <div>
                 <strong>Experienced Technicians</strong>
-                <p>Skilled professionals for all major appliance brands.</p>
+                <p>Specialists in all major appliance brands, heavy motors, and modern home wiring.</p>
               </div>
             </div>
 
@@ -357,7 +378,7 @@ export default function Home() {
               <span>✓</span>
               <div>
                 <strong>Transparent Pricing</strong>
-                <p>No hidden charges or unnecessary part replacements.</p>
+                <p>No hidden charges, standard rate cards, and authentic spare parts.</p>
               </div>
             </div>
 
@@ -365,19 +386,19 @@ export default function Home() {
               <span>✓</span>
               <div>
                 <strong>Quick Doorstep Service</strong>
-                <p>Fast appointment schedules directly at your doorstep.</p>
+                <p>Fast appointment scheduling with same-day emergency visit options.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 📝 NEW: BLOGS SECTION ON HOME PAGE */}
+      {/* 📝 BLOGS SECTION ON HOME PAGE */}
       <section className="home-blogs-section">
         <div className="section-heading">
           <p className="tagline">EXPERT TIPS & GUIDES</p>
           <h2>Latest from Our Blog</h2>
-          <p>Maintenance advice, troubleshooting guides, and energy-saving tips from our repair specialists.</p>
+          <p>Maintenance advice, electrical safety tips, and energy-saving guides from our repair specialists.</p>
         </div>
 
         {blogsLoading ? (
@@ -499,11 +520,12 @@ export default function Home() {
                 type="text"
                 name="city"
                 required
-                placeholder="Enter city / area (e.g. Noida, Delhi, Lucknow)"
+                placeholder="Enter city / area (e.g. Noida, Delhi, Patna)"
                 value={formData.city}
                 onChange={handleInputChange}
               />
 
+              {/* ✅ UPDATED SELECT SERVICE WITH MOTOR, FAN, WIRING & ELECTRICAL */}
               <label>Select Service *</label>
               <select
                 name="serviceType"
@@ -511,10 +533,14 @@ export default function Home() {
                 value={formData.serviceType}
                 onChange={handleInputChange}
               >
-                <option value="AC Services">AC Services (Installation / Repair / Gas)</option>
-                <option value="Refrigerator Repair">Refrigerator Repair</option>
-                <option value="Washing Machine Repair">Washing Machine Repair</option>
-                <option value="Preventive Maintenance">Preventive Maintenance</option>
+                <option value="AC Services">AC Services (Installation / Repair / Gas Charging)</option>
+                <option value="Refrigerator Repair">Refrigerator Repair (Single / Double Door / Deep Freeze)</option>
+                <option value="Washing Machine Repair">Washing Machine Repair (Automatic / Semi-Automatic)</option>
+                <option value="Motor Repair & Rewinding">Motor (Water Pump / Cooler Motor / Submersible)</option>
+                <option value="Fan Repair & Installation">Fan (Ceiling Fan / Exhaust / Table Fan)</option>
+                <option value="House Wiring">House Wiring (New Wiring / Short Circuit / MCB)</option>
+                <option value="All Electric Works">All Electric Works (Switchboard, Inverter, Earthing, Lights)</option>
+                <option value="Preventive Maintenance">Preventive Maintenance & Inspection</option>
                 <option value="Other">Other Home Appliances</option>
               </select>
 
@@ -532,7 +558,7 @@ export default function Home() {
               <textarea
                 name="message"
                 required
-                placeholder="Describe the issue or exact location landmark..."
+                placeholder="Describe the issue (e.g., motor sound, fan capacitor slow, wiring fault, AC cooling)..."
                 value={formData.message}
                 onChange={handleInputChange}
                 rows="3"
@@ -583,7 +609,7 @@ export default function Home() {
               <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
               <span className="logo-text">Chintu Cool AC Service</span>
             </div>
-            <p>Doorstep AC, Refrigerator, and Washing Machine Repair & Servicing Solutions.</p>
+            <p>Doorstep AC, Refrigerator, Washing Machine, Motor, Fan & Complete Electrical Repair Solutions.</p>
           </div>
 
           <div className="footer-col">
@@ -622,7 +648,7 @@ export default function Home() {
 
         <div className="footer-bottom">
           <p>© 2026 Chintu Cool AC Service. All rights reserved.</p>
-          <p>Doorstep AC Installation, Gas Refilling, Fridge Motor & Washing Machine Drum Fix.</p>
+          <p>Doorstep AC Installation, Gas Refilling, Fridge Motor, Washing Machine Drum, Fan & House Wiring Fix.</p>
         </div>
       </footer>
     </div>

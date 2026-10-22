@@ -205,11 +205,15 @@ export const STATE_CITY_DATA = {
     "Longding", "Anini", "Hawai", "Koloriang", "Raga"
   ]
 };
-
 export const APPLIANCE_SERVICES = [
-  "AC Service & Gas Charging",
-  "AC Installation / Uninstallation",
-  "Refrigerator Repair (Single/Double Door)",
-  "Washing Machine Repair (Top/Front Load)",
-  "Preventive Maintenance"
+  "AC Services",
+  "Refrigerator Repair",
+  "Washing Machine Repair",
+  "Motor Repair & Rewinding",
+  "Fan Repair & Installation",
+  "House Wiring",
+  "All Electric Works",
+  "Preventive Maintenance",
+  "Microwave Repair",
+  "Other"
 ];
