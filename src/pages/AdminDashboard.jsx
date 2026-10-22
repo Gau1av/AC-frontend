@@ -54,32 +54,31 @@ export default function AdminDashboard() {
     service: 'All'
   });
 
-  /* ---------- INQUIRY STATE & MODAL ---------- */
+  /* ---------- INQUIRY STATE ---------- */
   const [inquiries, setInquiries] = useState([]);
   const [search, setSearch] = useState('');
   const [range, setRange] = useState('day');
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
-  const [viewItem, setViewItem] = useState(null); // POP-UP MODAL DATA
+  const [viewItem, setViewItem] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [actionStatus, setActionStatus] = useState('');
 
-  // 30 Inquiries per page
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
-
-  // Horizontal Quick Slider Filter
   const [inquiryQuickFilter, setInquiryQuickFilter] = useState('All');
 
+  /* ---------- BUSINESS STATE ---------- */
   const [businesses, setBusinesses] = useState([]);
   const [businessSearch, setBusinessSearch] = useState('');
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+  const [viewBusiness, setViewBusiness] = useState(null);
   const [newBusiness, setNewBusiness] = useState({
     businessName: '',
     ownerName: '',
     phone: '',
     state: 'Delhi (NCT)',
     city: 'New Delhi',
-    serviceCategory: 'AC Service & Gas Charging',
+    serviceCategory: 'AC Services',
     status: 'Active',
     isPaid: false
   });
@@ -90,7 +89,7 @@ export default function AdminDashboard() {
     email: '',
     state: 'Delhi (NCT)',
     city: 'New Delhi',
-    serviceType: 'AC Service & Gas Charging',
+    serviceType: 'AC Services',
     date: '',
     message: '',
     status: 'Pending'
@@ -122,7 +121,7 @@ export default function AdminDashboard() {
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  /* ---------- REPORT STATE ---------- */
+  /* ---------- REPORTS STATE ---------- */
   const [reportRange, setReportRange] = useState('month');
   const [businessReport, setBusinessReport] = useState({ labels: [], datasets: [] });
   const [serviceReport, setServiceReport] = useState({ labels: [], datasets: [] });
@@ -279,11 +278,11 @@ export default function AdminDashboard() {
       ]);
 
       setBusinessReport({
-        labels: bizRes.data.data.map((d) => d._id),
+        labels: (bizRes.data.data || []).map((d) => d._id),
         datasets: [
           {
             label: `Businesses Registered (${reportRange.toUpperCase()})`,
-            data: bizRes.data.data.map((d) => d.count),
+            data: (bizRes.data.data || []).map((d) => d.count),
             borderColor: '#ff8a00',
             backgroundColor: 'rgba(255, 138, 0, 0.15)',
             tension: 0.35,
@@ -299,11 +298,11 @@ export default function AdminDashboard() {
       });
 
       setServiceReport({
-        labels: svcRes.data.data.map((d) => d._id || 'Other'),
+        labels: (svcRes.data.data || []).map((d) => d._id || 'Other'),
         datasets: [
           {
             label: 'Inquiries by Service',
-            data: svcRes.data.data.map((d) => d.count),
+            data: (svcRes.data.data || []).map((d) => d.count),
             backgroundColor: [
               '#0284c7',
               '#ff8a00',
@@ -381,9 +380,7 @@ export default function AdminDashboard() {
       const res = await API.put(`/api/admin/inquiries/${inquiryId}`, { status: newStatus });
       if (res.data.success) {
         setInquiries((prev) =>
-          prev.map((item) =>
-            item._id === inquiryId ? { ...item, status: newStatus } : item
-          )
+          prev.map((item) => (item._id === inquiryId ? { ...item, status: newStatus } : item))
         );
         setViewItem((prev) => (prev && prev._id === inquiryId ? { ...prev, status: newStatus } : prev));
         fetchStats();
@@ -391,7 +388,7 @@ export default function AdminDashboard() {
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Status update karne me problem aayi.');
+      alert(err.response?.data?.message || 'Error updating status');
     }
   };
 
@@ -402,28 +399,46 @@ export default function AdminDashboard() {
         setBusinesses((prev) =>
           prev.map((biz) => (biz._id === bizId ? { ...biz, status: newStatus } : biz))
         );
+        setViewBusiness((prev) => (prev && prev._id === bizId ? { ...prev, status: newStatus } : prev));
         fetchStats();
         setActionStatus(`Business status updated to "${newStatus}"!`);
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Status change karne me error aayi');
+      alert(err.response?.data?.message || 'Error updating business');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inquiry?')) return;
+    if (!window.confirm('Are you sure you want to delete this customer booking?')) return;
     try {
       const res = await API.delete(`/api/admin/inquiries/${id}`);
       if (res.data.success) {
         setInquiries(inquiries.filter((inq) => inq._id !== id));
+        if (viewItem?._id === id) setViewItem(null);
         fetchStats();
         fetchAnalytics();
-        setActionStatus('Inquiry deleted successfully!');
+        setActionStatus('Inquiry booking deleted successfully!');
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error while deleting inquiry.');
+      alert(err.response?.data?.message || 'Error deleting inquiry');
+    }
+  };
+
+  const handleDeleteBusiness = async (id) => {
+    if (!window.confirm('Delete this business booking from directory?')) return;
+    try {
+      const res = await API.delete(`/api/admin/businesses/${id}`);
+      if (res.data.success) {
+        setBusinesses(businesses.filter((b) => b._id !== id));
+        if (viewBusiness?._id === id) setViewBusiness(null);
+        fetchStats();
+        setActionStatus('Business booking deleted successfully!');
+        setTimeout(() => setActionStatus(''), 3000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting business');
     }
   };
 
@@ -439,7 +454,7 @@ export default function AdminDashboard() {
           email: '',
           state: 'Delhi (NCT)',
           city: 'New Delhi',
-          serviceType: 'AC Service & Gas Charging',
+          serviceType: 'AC Services',
           date: '',
           message: '',
           status: 'Pending'
@@ -447,11 +462,11 @@ export default function AdminDashboard() {
         fetchInquiries();
         fetchStats();
         fetchAnalytics();
-        setActionStatus('New booking successfully added!');
+        setActionStatus('New customer booking added!');
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Booking add karne me issue aayi.');
+      alert(err.response?.data?.message || 'Failed to add booking');
     }
   };
 
@@ -467,7 +482,7 @@ export default function AdminDashboard() {
           phone: '',
           state: 'Delhi (NCT)',
           city: 'New Delhi',
-          serviceCategory: 'AC Service & Gas Charging',
+          serviceCategory: 'AC Services',
           status: 'Active',
           isPaid: false
         });
@@ -477,7 +492,7 @@ export default function AdminDashboard() {
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Faced issue while registering business.');
+      alert(err.response?.data?.message || 'Failed to register business');
     }
   };
 
@@ -503,7 +518,7 @@ export default function AdminDashboard() {
         setTimeout(() => setActionStatus(''), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update blog approval status.');
+      alert(err.response?.data?.message || 'Failed to update blog approval status');
     }
   };
 
@@ -668,7 +683,7 @@ export default function AdminDashboard() {
         phone: '9876543210',
         state: 'Delhi (NCT)',
         city: 'New Delhi',
-        serviceCategory: 'AC Service & Gas Charging',
+        serviceCategory: 'AC Services',
         status: 'Active',
         isPaid: true
       }
@@ -740,11 +755,11 @@ export default function AdminDashboard() {
   const statCards = [
     { key: 'totalBusiness', label: 'Total Business', color: '#ff8a00', icon: '🏢', bg: 'linear-gradient(135deg, #fff7ed, #fed7aa)' },
     { key: 'totalPaid', label: 'Total Paid', color: '#10b981', icon: '💳', bg: 'linear-gradient(135deg, #ecfdf5, #a7f3d0)' },
-    { key: 'totalLead', label: 'Total Lead', color: '#3b82f6', icon: '🎯', bg: 'linear-gradient(135deg, #eff6ff, #bfdbfe)' },
-    { key: 'totalContact', label: 'Total Contact', color: '#14b8a6', icon: '📞', bg: 'linear-gradient(135deg, #f0fdfa, #99f6e4)' }
+    { key: 'totalLead', label: 'Total Lead', color: '#0284c7', icon: '🎯', bg: 'linear-gradient(135deg, #eff6ff, #bfdbfe)' },
+    { key: 'totalContact', label: 'Total Contact', color: '#8b5cf6', icon: '📞', bg: 'linear-gradient(135deg, #f5f3ff, #ddd6fe)' }
   ];
 
-  /* ---------- FILTERED & PAGINATED INQUIRIES (30 Per Page) ---------- */
+  /* ---------- FILTERED INQUIRIES ---------- */
   const filteredInquiries = inquiries.filter((inq) => {
     if (inquiryQuickFilter === 'All') return true;
     return inq.status === inquiryQuickFilter;
@@ -755,6 +770,17 @@ export default function AdminDashboard() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const filteredBusinesses = businesses.filter((b) => {
+    if (!businessSearch) return true;
+    const q = businessSearch.toLowerCase();
+    return (
+      b.businessName?.toLowerCase().includes(q) ||
+      b.ownerName?.toLowerCase().includes(q) ||
+      b.phone?.toLowerCase().includes(q) ||
+      b.city?.toLowerCase().includes(q)
+    );
+  });
 
   const filteredComments = comments.filter((c) => {
     if (!commentSearch) return true;
@@ -773,7 +799,7 @@ export default function AdminDashboard() {
 
   if (permissions === null) {
     return (
-      <div role="status" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: '#64748b', fontWeight: 600 }}>
+      <div role="status" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: '#0f172a', fontWeight: 800 }}>
         Checking admin access & permissions…
       </div>
     );
@@ -782,31 +808,32 @@ export default function AdminDashboard() {
   return (
     <div className="admin-root">
       <style>{`
-        * { box-sizing: border-box; }
-        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; text-align: left; }
+        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; overflow-x: hidden; }
 
         .admin-root {
           display: flex;
-          height: 100vh;
-          width: 100vw;
-          overflow: hidden;
-          background: #f1f5f9;
+          min-height: 100vh;
+          width: 100%;
+          background: #f8fafc;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          color: #0f172a;
         }
 
         /* ============ 1. FIXED LEFT SIDEBAR ============ */
         .sidebar {
-          width: 290px;
-          background:
-            radial-gradient(circle at 80% 0%, rgba(255, 138, 0, 0.12), transparent 40%),
-            linear-gradient(180deg, #131c2e 0%, #0f172a 100%);
-          color: #fff;
+          width: 280px;
+          background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+          color: #ffffff;
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
-          border-right: 1px solid rgba(148, 163, 184, 0.1);
-          box-shadow: 4px 0 24px rgba(15, 23, 42, 0.15);
+          border-right: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 4px 0 24px rgba(15, 23, 42, 0.2);
+          position: sticky;
+          top: 0;
           height: 100vh;
+          max-height: 100vh;
           z-index: 100;
         }
 
@@ -818,186 +845,220 @@ export default function AdminDashboard() {
           flex-direction: column;
         }
         .sidebar-scroll::-webkit-scrollbar { width: 5px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 10px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
 
         .sidebar-header {
-          padding: 22px 20px;
-          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+          padding: 20px 18px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
           position: relative;
           flex-shrink: 0;
         }
         .sidebar-header::after {
           content: "";
           position: absolute;
-          bottom: 0; left: 20px;
-          width: 50px; height: 3px;
+          bottom: 0; left: 18px;
+          width: 45px; height: 3px;
           background: linear-gradient(90deg, #ff8a00, #facc15);
           border-radius: 99px;
         }
 
         .sidebar-brand-wrap { display: flex; align-items: center; gap: 12px; }
         .sidebar-logo {
-          width: 50px; height: 50px; aspect-ratio: 1 / 1; object-fit: cover;
-          border-radius: 50%; border: 2px solid rgba(255, 138, 0, 0.5);
-          box-shadow: 0 8px 20px rgba(255, 138, 0, 0.25);
+          width: 46px; height: 46px; aspect-ratio: 1 / 1; object-fit: cover;
+          border-radius: 50%; border: 2px solid #ff8a00;
+          box-shadow: 0 4px 14px rgba(255, 138, 0, 0.3);
         }
-        .sidebar-brand-text { display: flex; flex-direction: column; gap: 4px; }
-        .sidebar-brand { font-size: 1.15rem; color: #ff8a00; font-weight: 800; margin: 0; line-height: 1.15; }
-        .sidebar-sub { font-size: 0.68rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+        .sidebar-brand-text { display: flex; flex-direction: column; gap: 2px; }
+        .sidebar-brand { font-size: 1.1rem; color: #ff8a00; font-weight: 900; margin: 0; line-height: 1.2; }
+        .sidebar-sub { font-size: 0.68rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
 
         .sidebar-role-indicator {
-          margin: 14px 16px 6px;
+          margin: 12px 14px 6px;
           padding: 8px 12px;
           border-radius: 8px;
           display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 0.78rem;
+          font-size: 0.8rem;
           font-weight: 800;
         }
 
-        .sidebar-nav { margin-top: 8px; padding: 0 12px; }
+        .sidebar-nav { margin-top: 8px; padding: 0 10px; }
         .nav-btn {
-          display: flex; align-items: center; gap: 12px; width: 100%;
-          padding: 13px 16px; font-size: 0.9rem; border: none; background: transparent;
-          color: #94a3b8; cursor: pointer; text-align: left; font-weight: 600;
-          border-radius: 10px; margin-bottom: 6px; position: relative;
-          transition: all 0.2s ease;
+          display: flex; align-items: center; gap: 10px; width: 100%;
+          padding: 12px 14px; font-size: 0.88rem; border: none; background: transparent;
+          color: #cbd5e1; cursor: pointer; text-align: left; font-weight: 700;
+          border-radius: 8px; margin-bottom: 4px; transition: all 0.2s ease;
         }
-        .nav-btn:hover { background: rgba(255, 138, 0, 0.08); color: #fff; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
         .nav-btn.active {
-          background: linear-gradient(135deg, rgba(255, 138, 0, 0.18), rgba(250, 204, 21, 0.08));
-          color: #ff8a00; box-shadow: 0 6px 18px rgba(255, 138, 0, 0.15);
+          background: linear-gradient(135deg, rgba(255, 138, 0, 0.22), rgba(250, 204, 21, 0.12));
+          color: #ff8a00;
+          border-left: 3px solid #ff8a00;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
         }
 
         .sidebar-filter-box {
-          padding: 16px 20px;
-          border-top: 1px solid rgba(148, 163, 184, 0.12);
-          margin-top: 12px;
+          padding: 14px 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          margin-top: 10px;
         }
         .sidebar-filter-heading {
-          font-size: 0.7rem; font-weight: 700; color: #64748b;
-          text-transform: uppercase; margin-bottom: 14px;
+          font-size: 0.72rem; font-weight: 800; color: #94a3b8;
+          text-transform: uppercase; margin-bottom: 12px;
           display: flex; justify-content: space-between; align-items: center;
         }
-        .filter-group { margin-bottom: 14px; }
-        .filter-group label { display: block; font-size: 0.74rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px; }
+        .filter-group { margin-bottom: 12px; text-align: left; }
+        .filter-group label { display: block; font-size: 0.72rem; color: #e2e8f0; font-weight: 700; margin-bottom: 4px; text-align: left; }
         .filter-group select {
-          width: 100%; padding: 9px 12px; background: rgba(15, 23, 42, 0.7);
-          border: 1px solid #334155; border-radius: 8px; color: #f8fafc;
-          font-size: 0.83rem; outline: none; cursor: pointer;
+          width: 100%; padding: 8px 10px; background: #0f172a;
+          border: 1.5px solid #334155; border-radius: 8px; color: #f8fafc;
+          font-size: 0.82rem; outline: none; cursor: pointer; font-weight: 600; text-align: left;
         }
+
+        /* 🔵 BLUE THEMED SELECT CATEGORY DROPDOWN */
+        .select-category-blue {
+          background: #eff6ff !important;
+          color: #0369a1 !important;
+          border: 2px solid #0284c7 !important;
+          font-weight: 800 !important;
+          outline: none;
+          cursor: pointer;
+          text-align: left !important;
+        }
+        .select-category-blue:focus {
+          border-color: #0284c7 !important;
+          box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+        }
+        .select-category-blue option {
+          background: #ffffff !important;
+          color: #0f172a !important;
+          font-weight: 700;
+          text-align: left !important;
+        }
+
         .btn-reset-filters {
           background: transparent; border: none; color: #f87171;
-          font-size: 0.7rem; cursor: pointer; font-weight: 700; text-decoration: underline;
+          font-size: 0.72rem; cursor: pointer; font-weight: 800; text-decoration: underline;
         }
 
         .sidebar-logout-wrap {
-          flex-shrink: 0; padding: 16px 20px 20px;
-          border-top: 1px solid rgba(148, 163, 184, 0.15);
+          flex-shrink: 0; padding: 14px 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         .logout-btn {
-          width: 100%; padding: 12px; background: linear-gradient(135deg, #ef4444, #dc2626);
-          color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
-          font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+          width: 100%; padding: 11px; background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: #ffffff; border: none; border-radius: 8px; font-weight: 800; cursor: pointer;
+          font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
-        /* ============ 2. MAIN CONTENT SPLIT (TOP FIXED + BOTTOM SCROLL) ============ */
+        /* ============ 2. MAIN CONTENT AREA ============ */
         .main-content-layout {
           flex: 1;
           display: flex;
           flex-direction: column;
           height: 100vh;
           overflow: hidden;
-          width: calc(100% - 290px);
+          width: calc(100% - 280px);
+          text-align: left;
         }
 
-        /* 🔒 TOP FIXED SECTION */
+        /* FIXED TOP SECTION */
         .fixed-top-section {
           flex-shrink: 0;
-          background: #f1f5f9;
-          padding: 24px 32px 14px;
-          border-bottom: 1px solid #e2e8f0;
-          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+          background: #ffffff;
+          padding: 20px 28px 14px;
+          border-bottom: 1.5px solid #e2e8f0;
+          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
           z-index: 20;
+          text-align: left;
         }
 
         .page-header {
           display: flex; justify-content: space-between; align-items: center;
-          margin-bottom: 18px; flex-wrap: wrap; gap: 14px;
+          margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+          text-align: left;
         }
-        .page-title { margin: 0; color: #0f172a; font-size: 1.45rem; font-weight: 800; }
+        .page-title { margin: 0; color: #0f172a; font-size: 1.5rem; font-weight: 900; text-align: left; }
         .page-breadcrumb {
-          font-size: 0.82rem; color: #64748b; margin-top: 4px;
-          display: flex; align-items: center; gap: 8px;
+          font-size: 0.82rem; color: #475569; margin-top: 4px;
+          display: flex; align-items: center; gap: 8px; font-weight: 600; text-align: left;
         }
         .role-chip {
-          display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px;
-          border-radius: 999px; font-size: 0.75rem; font-weight: 800;
+          display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
+          border-radius: 999px; font-size: 0.76rem; font-weight: 800;
         }
-        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .btn-add-business, .btn-add-booking {
-          padding: 9px 16px; border-radius: 10px; border: none; font-weight: 700;
+          padding: 10px 16px; border-radius: 8px; border: none; font-weight: 800;
           cursor: pointer; font-size: 0.86rem; display: inline-flex; align-items: center; gap: 6px;
         }
-        .btn-add-business { background: linear-gradient(135deg, #ff8a00, #f97316); color: #fff; }
-        .btn-add-booking { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; }
+        .btn-add-business { background: #ff8a00; color: #ffffff; box-shadow: 0 4px 12px rgba(255, 138, 0, 0.25); }
+        .btn-add-booking { background: #0284c7; color: #ffffff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); }
+
+        .action-toast {
+          background: #ecfdf5; color: #065f46; border: 1.5px solid #86efac;
+          padding: 8px 14px; border-radius: 8px; margin-bottom: 12px;
+          font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;
+          text-align: left;
+        }
 
         .top-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          margin-bottom: 14px;
+          gap: 14px;
+          margin-bottom: 12px;
         }
         .stat-card {
-          background: #ffffff; padding: 14px 18px; border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05); border: 1px solid #e2e8f0;
-          display: flex; align-items: center; gap: 14px;
+          background: #ffffff; padding: 12px 16px; border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05); border: 1.5px solid #e2e8f0;
+          display: flex; align-items: center; gap: 14px; text-align: left;
         }
         .stat-icon-wrap {
           width: 44px; height: 44px; display: grid; place-items: center;
           border-radius: 10px; font-size: 1.3rem; flex-shrink: 0;
         }
-        .stat-card-text { display: flex; flex-direction: column; }
-        .stat-title { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin: 0; }
-        .stat-val { font-size: 1.6rem; font-weight: 900; margin: 2px 0 0; color: #0f172a; line-height: 1; }
+        .stat-card-text { display: flex; flex-direction: column; text-align: left; }
+        .stat-title { font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0; text-align: left; }
+        .stat-val { font-size: 1.65rem; font-weight: 900; margin: 2px 0 0; color: #0f172a; line-height: 1; text-align: left; }
 
         .chart-toggle-bar {
           display: flex; justify-content: space-between; align-items: center;
-          background: #ffffff; padding: 10px 18px; border-radius: 12px;
-          border: 1px solid #e2e8f0; margin-bottom: 4px;
+          background: #f8fafc; padding: 10px 16px; border-radius: 10px;
+          border: 1px solid #cbd5e1; margin-bottom: 4px;
         }
         .chart-toggle-btn {
           padding: 7px 16px; border-radius: 8px; border: none;
-          background: #0284c7; color: #fff; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+          background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.82rem; cursor: pointer;
         }
         .chart-card-wrapper {
           max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
         }
         .chart-card-wrapper.open { max-height: 380px; margin-top: 10px; }
         .chart-card {
-          background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0;
+          background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1.5px solid #e2e8f0;
         }
 
-        /* 📜 SCROLLABLE BOTTOM CONTENT */
+        /* SCROLLABLE BODY */
         .scrollable-body-section {
           flex: 1;
           overflow-y: auto;
-          padding: 18px 32px 40px;
+          padding: 16px 28px 40px;
+          text-align: left;
         }
 
-        /* ============ HORIZONTAL SLIDER STRIP ============ */
+        /* HORIZONTAL SLIDER */
         .slider-section-wrap {
           display: flex; align-items: center; margin-bottom: 16px;
-          background: #ffffff; padding: 10px 14px; border-radius: 14px;
-          border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+          background: #ffffff; padding: 10px 14px; border-radius: 12px;
+          border: 1.5px solid #e2e8f0; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
         }
         .slider-scroll-btn {
-          width: 30px; height: 30px; border-radius: 50%; border: 1px solid #cbd5e1;
-          background: #f8fafc; color: #334155; font-size: 0.8rem; cursor: pointer;
-          display: grid; place-items: center; flex-shrink: 0; transition: all 0.2s ease;
+          width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #cbd5e1;
+          background: #f8fafc; color: #0f172a; font-size: 0.85rem; cursor: pointer;
+          display: grid; place-items: center; flex-shrink: 0; font-weight: 800;
         }
-        .slider-scroll-btn:hover { background: #0284c7; color: #fff; border-color: #0284c7; }
+        .slider-scroll-btn:hover { background: #0284c7; color: #ffffff; border-color: #0284c7; }
         .inquiry-slider-track {
           display: flex; align-items: center; gap: 10px; overflow-x: auto;
           scroll-behavior: smooth; padding: 2px 10px; scrollbar-width: none; flex: 1;
@@ -1005,151 +1066,197 @@ export default function AdminDashboard() {
         .inquiry-slider-track::-webkit-scrollbar { display: none; }
         .slider-item-card {
           display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
-          border-radius: 999px; background: #f8fafc; border: 1.5px solid #e2e8f0;
-          color: #475569; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+          border-radius: 999px; background: #f8fafc; border: 1.5px solid #cbd5e1;
+          color: #334155; font-size: 0.84rem; font-weight: 800; cursor: pointer;
           white-space: nowrap; transition: all 0.2s ease;
         }
         .slider-item-card:hover { border-color: #0284c7; color: #0284c7; background: #f0f9ff; }
         .slider-item-card.active {
           background: #0284c7; border-color: #0284c7; color: #ffffff;
-          box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+          box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
         }
         .slider-badge {
-          padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 800;
-          background: #e2e8f0; color: #334155;
+          padding: 2px 8px; border-radius: 99px; font-size: 0.74rem; font-weight: 900;
+          background: #e2e8f0; color: #0f172a;
         }
-        .slider-item-card.active .slider-badge { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
+        .slider-item-card.active .slider-badge { background: rgba(255, 255, 255, 0.28); color: #ffffff; }
 
         .search-bar-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
         .search-input {
-          max-width: 420px; flex: 1; padding: 10px 14px; border-radius: 10px;
-          border: 1.5px solid #cbd5e1; font-size: 0.9rem; background: #ffffff; color: #0f172a;
+          max-width: 440px; flex: 1; padding: 11px 16px; border-radius: 10px;
+          border: 1.5px solid #cbd5e1; font-size: 0.92rem; background: #ffffff; color: #0f172a;
+          outline: none; font-weight: 600; text-align: left;
         }
+        .search-input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
         .search-btn {
-          padding: 10px 20px; border-radius: 10px; border: none;
-          background: #0f172a; color: #fff; cursor: pointer; font-weight: 700;
+          padding: 11px 22px; border-radius: 10px; border: none;
+          background: #0f172a; color: #ffffff; cursor: pointer; font-weight: 800; font-size: 0.88rem;
         }
 
-        /* ============ TABLE ============ */
+        /* TABLE - CLEAN LEFT ALIGNED */
         .table-container {
-          background: #ffffff; border-radius: 14px;
-          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05); border: 1px solid #e2e8f0;
+          background: #ffffff; border-radius: 12px;
+          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05); border: 1.5px solid #e2e8f0;
           overflow-x: auto;
         }
         .admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
         .admin-table th {
-          background: #f8fafc; color: #475569; padding: 13px 16px; font-weight: 800;
-          border-bottom: 1.5px solid #e2e8f0; font-size: 0.76rem; text-transform: uppercase;
+          background: #f1f5f9; color: #1e293b; padding: 14px 16px; font-weight: 900;
+          border-bottom: 2px solid #cbd5e1; font-size: 0.78rem; text-transform: uppercase;
+          white-space: nowrap; text-align: left;
         }
-        .admin-table td { padding: 13px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-        .contact-link { color: #0284c7; text-decoration: none; font-weight: 600; }
+        .admin-table td {
+          padding: 13px 16px; border-bottom: 1px solid #e2e8f0;
+          color: #1e293b; vertical-align: middle; font-weight: 600; text-align: left;
+        }
+        .admin-table tr:hover { background: #f8fafc; }
+
+        .contact-link { color: #0284c7; text-decoration: none; font-weight: 800; }
+        .contact-link:hover { text-decoration: underline; }
+
         .service-tag {
           background: #e0f2fe; color: #0369a1; padding: 4px 10px;
-          border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-block;
+          border-radius: 6px; font-size: 0.78rem; font-weight: 800; display: inline-block;
+          white-space: nowrap; text-align: left;
         }
         .service-tag-warn {
-          background: #fef3c7; color: #92400e; padding: 4px 10px;
-          border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-block;
+          background: #ffedd5; color: #9a3412; padding: 4px 10px;
+          border-radius: 6px; font-size: 0.78rem; font-weight: 800; display: inline-block;
+          white-space: nowrap; text-align: left;
         }
         .service-tag-draft {
           background: #fee2e2; color: #b91c1c; padding: 4px 10px;
-          border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-block;
+          border-radius: 6px; font-size: 0.78rem; font-weight: 800; display: inline-block;
+          white-space: nowrap; text-align: left;
         }
 
+        .status-select-box {
+          padding: 6px 10px; border-radius: 6px; font-weight: 800;
+          border: 1.5px solid #cbd5e1; font-size: 0.82rem; background: #ffffff;
+          cursor: pointer; outline: none; color: #0f172a; text-align: left;
+        }
+
+        .action-btn-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
         .admin-action-btn {
-          padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+          padding: 7px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 800;
           cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px;
         }
-        .btn-view { background: #e0f2fe; color: #0369a1; margin-right: 6px; }
+        .btn-view { background: #e0f2fe; color: #0369a1; }
+        .btn-view:hover { background: #0284c7; color: #ffffff; }
         .btn-delete { background: #fee2e2; color: #dc2626; }
-        .btn-approve { background: #dcfce7; color: #15803d; margin-right: 6px; }
-        .btn-reject { background: #fef3c7; color: #b45309; margin-right: 6px; }
+        .btn-delete:hover { background: #dc2626; color: #ffffff; }
+        .btn-approve { background: #dcfce7; color: #15803d; }
+        .btn-reject { background: #fef3c7; color: #b45309; }
 
-        /* ============ PAGINATION BAR (30 PER PAGE) ============ */
+        /* PAGINATION */
         .pagination-bar {
           display: flex; justify-content: space-between; align-items: center;
-          flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 16px;
-          background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
+          flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 18px;
+          background: #ffffff; border-radius: 10px; border: 1.5px solid #e2e8f0;
+          text-align: left;
         }
-        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
-        .pagination-actions { display: flex; gap: 6px; align-items: center; }
+        .pagination-info { font-size: 0.86rem; color: #334155; font-weight: 700; text-align: left; }
+        .pagination-actions { display: flex; gap: 4px; }
         .page-btn {
-          padding: 6px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1;
-          background: #ffffff; color: #334155; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+          padding: 6px 12px; border-radius: 6px; border: 1.5px solid #cbd5e1;
+          background: #ffffff; color: #1e293b; font-size: 0.84rem; font-weight: 800; cursor: pointer;
         }
         .page-btn:hover:not(:disabled) { border-color: #0284c7; color: #0284c7; background: #f0f9ff; }
         .page-btn.active { background: #0284c7; border-color: #0284c7; color: #ffffff; }
-        .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ============ 3. INQUIRY POP-UP MODAL (LEFT-ALIGNED, NAME ON TOP) ============ */
+        /* ============ 3. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL ============ */
         .modal-overlay {
-          position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7);
+          position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75);
           backdrop-filter: blur(4px); display: flex; align-items: center;
           justify-content: center; z-index: 9999; padding: 1rem;
         }
         .modal-box-left {
-          background: #ffffff; width: 100%; max-width: 580px; border-radius: 18px;
-          padding: 28px 32px; position: relative; max-height: 90vh; overflow-y: auto;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0;
-          text-align: left;
+          background: #ffffff; width: 100%; max-width: 620px; border-radius: 16px;
+          padding: 30px 32px; position: relative; max-height: 90vh; overflow-y: auto;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); border: 1.5px solid #cbd5e1;
+          text-align: left !important;
         }
         .modal-close {
-          position: absolute; top: 18px; right: 18px; background: #f1f5f9;
+          position: absolute; top: 16px; right: 16px; background: #f1f5f9;
           border: none; border-radius: 50%; width: 34px; height: 34px;
-          cursor: pointer; font-weight: 700; color: #64748b;
+          cursor: pointer; font-weight: 900; color: #475569; font-size: 1rem;
         }
         .modal-close:hover { background: #fee2e2; color: #ef4444; }
 
+        /* Customer / Vendor Name at Very Top */
         .modal-customer-name-hero {
-          margin: 0 0 6px; font-size: 1.6rem; font-weight: 900;
-          color: #0f172a; text-align: left;
+          margin: 0 0 4px; font-size: 1.65rem; font-weight: 900;
+          color: #0f172a; text-align: left !important; line-height: 1.2;
         }
         .modal-customer-sub {
-          margin: 0 0 20px; font-size: 0.86rem; color: #64748b;
-          font-weight: 600; text-align: left;
+          margin: 0 0 20px; font-size: 0.84rem; color: #64748b;
+          font-weight: 700; text-align: left !important;
         }
 
+        /* Sequential Filled Details Grid */
         .modal-info-grid {
           display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-          background: #f8fafc; padding: 16px; border-radius: 12px;
-          border: 1px solid #e2e8f0; margin-bottom: 20px; text-align: left;
+          background: #f8fafc; padding: 18px; border-radius: 12px;
+          border: 1.5px solid #e2e8f0; margin-bottom: 18px; text-align: left !important;
         }
+        .modal-info-item { text-align: left !important; }
         .modal-info-item strong {
-          display: block; font-size: 0.72rem; color: #64748b;
-          text-transform: uppercase; margin-bottom: 3px;
+          display: block; font-size: 0.74rem; color: #475569;
+          text-transform: uppercase; margin-bottom: 3px; font-weight: 800; text-align: left !important;
         }
         .modal-info-item span, .modal-info-item a {
-          font-size: 0.95rem; color: #0f172a; font-weight: 700; text-decoration: none;
+          font-size: 0.98rem; color: #0f172a; font-weight: 800; text-decoration: none; text-align: left !important;
         }
 
-        .modal-message-section {
-          text-align: left; margin-bottom: 24px;
-        }
+        .modal-message-section { text-align: left !important; margin-bottom: 20px; }
         .modal-message-section strong {
-          display: block; font-size: 0.78rem; color: #64748b;
-          text-transform: uppercase; margin-bottom: 8px;
+          display: block; font-size: 0.76rem; color: #475569;
+          text-transform: uppercase; margin-bottom: 6px; font-weight: 800; text-align: left !important;
         }
         .modal-message-box {
           background: #f8fafc; padding: 14px 16px; border-radius: 10px;
-          border: 1px solid #e2e8f0; color: #1e293b; font-size: 0.95rem;
-          line-height: 1.6; text-align: left;
+          border: 1.5px solid #e2e8f0; color: #0f172a; font-size: 0.95rem;
+          line-height: 1.6; text-align: left !important; font-weight: 600;
         }
 
         .modal-bottom-actions {
           display: flex; gap: 10px; justify-content: flex-start;
-          padding-top: 16px; border-top: 1px solid #e2e8f0;
+          padding-top: 16px; border-top: 1.5px solid #e2e8f0; flex-wrap: wrap; text-align: left !important;
         }
 
-        @media (max-width: 1200px) {
+        /* ============ 4. MOBILE VIEW ============ */
+        @media (max-width: 1024px) {
           .top-stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
+
         @media (max-width: 768px) {
-          .admin-root { flex-direction: column; overflow-y: auto; height: auto; }
-          .sidebar { width: 100%; height: auto; }
+          .admin-root { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
+          .sidebar { width: 100%; height: auto; max-height: none; position: relative; }
+          .sidebar-scroll { overflow-y: visible; }
           .main-content-layout { width: 100%; height: auto; overflow: visible; }
-          .fixed-top-section { position: relative; padding: 16px; }
-          .scrollable-body-section { padding: 16px; }
-          .top-stats-grid { grid-template-columns: 1fr; }
+          .fixed-top-section { position: relative; padding: 16px 14px; }
+          .scrollable-body-section { padding: 14px 12px 30px; }
+          .top-stats-grid { grid-template-columns: 1fr; gap: 10px; }
+          .page-header { flex-direction: column; align-items: flex-start; }
+          .header-actions { width: 100%; }
+          .btn-add-business, .btn-add-booking { flex: 1; justify-content: center; }
+          .search-bar-wrap { flex-direction: column; }
+          .search-input { max-width: 100%; width: 100%; }
+          .search-btn { width: 100%; }
+          .modal-box-left { padding: 22px 18px; border-radius: 12px; }
+          .modal-info-grid { grid-template-columns: 1fr; }
+          .admin-table th, .admin-table td { padding: 10px 12px; font-size: 0.82rem; }
+        }
+
+        @media (max-width: 480px) {
+          .modal-customer-name-hero { font-size: 1.35rem; }
+          .modal-bottom-actions { flex-direction: column; }
+          .modal-bottom-actions button { width: 100%; justify-content: center; }
         }
       `}</style>
 
@@ -1158,7 +1265,7 @@ export default function AdminDashboard() {
         <div className="sidebar-scroll">
           <div className="sidebar-header">
             <div className="sidebar-brand-wrap">
-              <img src={logo} alt="Chintu AC Cool Care" className="sidebar-logo" />
+              <img src={logo} alt="Chintu AC Logo" className="sidebar-logo" />
               <div className="sidebar-brand-text">
                 <h2 className="sidebar-brand">Chintu Cool AC</h2>
                 <div className="sidebar-sub">Admin Control Portal</div>
@@ -1171,7 +1278,7 @@ export default function AdminDashboard() {
             style={{
               background: currentRoleBadge.bg,
               color: currentRoleBadge.text,
-              border: `1px solid ${currentRoleBadge.border}`
+              border: `1.5px solid ${currentRoleBadge.border}`
             }}
           >
             <span>{currentRoleBadge.label}</span>
@@ -1183,7 +1290,7 @@ export default function AdminDashboard() {
                 className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
                 onClick={() => setActiveTab('dashboard')}
               >
-                📊 Inquiries & Analytics
+                📋 Customer Bookings
               </button>
             )}
             {canAccess('businesses') && (
@@ -1191,7 +1298,7 @@ export default function AdminDashboard() {
                 className={`nav-btn ${activeTab === 'businesses' ? 'active' : ''}`}
                 onClick={() => setActiveTab('businesses')}
               >
-                🏢 Business Management
+                🏢 Business Bookings
               </button>
             )}
             {canAccess('blogs') && (
@@ -1199,7 +1306,7 @@ export default function AdminDashboard() {
                 className={`nav-btn ${activeTab === 'blogs' ? 'active' : ''}`}
                 onClick={() => setActiveTab('blogs')}
               >
-                📝 Blog Management
+                📝 Blog Articles
               </button>
             )}
             {canAccess('comments') && (
@@ -1223,7 +1330,7 @@ export default function AdminDashboard() {
                 className={`nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reports')}
               >
-                📈 Graph Reports
+                📈 Reports & Graphs
               </button>
             )}
           </div>
@@ -1243,7 +1350,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="filter-group">
-                <label>State</label>
+                <label>Operating State</label>
                 <select
                   value={sidebarFilters.state}
                   onChange={(e) => handleSidebarStateChange(e.target.value)}
@@ -1256,7 +1363,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="filter-group">
-                <label>City</label>
+                <label>Operating City</label>
                 <select
                   value={sidebarFilters.city}
                   onChange={(e) => setSidebarFilters({ ...sidebarFilters, city: e.target.value })}
@@ -1271,13 +1378,15 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
+              {/* 🔵 BLUE THEMED APPLIANCE SELECT CATEGORY DROPDOWN */}
               <div className="filter-group">
-                <label>Appliance Service</label>
+                <label style={{ color: '#38bdf8' }}>Select Category</label>
                 <select
+                  className="select-category-blue"
                   value={sidebarFilters.service}
                   onChange={(e) => setSidebarFilters({ ...sidebarFilters, service: e.target.value })}
                 >
-                  <option value="All">All Services</option>
+                  <option value="All">All Categories</option>
                   {APPLIANCE_SERVICES.map((srv) => (
                     <option key={srv} value={srv}>{srv}</option>
                   ))}
@@ -1289,33 +1398,32 @@ export default function AdminDashboard() {
 
         <div className="sidebar-logout-wrap">
           <button onClick={handleLogout} className="logout-btn">
-            🚪 Logout
+            🚪 Logout Portal
           </button>
         </div>
       </aside>
 
       {/* ============ 2. MAIN CONTENT AREA ============ */}
       <div className="main-content-layout">
-        {/* 🔒 FIXED TOP SECTION (Analytics & Top Stats) */}
         <section className="fixed-top-section">
           <div className="page-header">
             <div>
               <h2 className="page-title">
                 {activeTab === 'dashboard' && '📋 Customer Inquiries & Leads'}
-                {activeTab === 'businesses' && '🏢 Registered Businesses'}
+                {activeTab === 'businesses' && '🏢 Registered Businesses & Vendors'}
                 {activeTab === 'blogs' && '📝 Blog & Article Approvals'}
                 {activeTab === 'comments' && '💬 Comment Moderation'}
                 {activeTab === 'subscribers' && '📬 Newsletter Subscribers'}
                 {activeTab === 'reports' && '📈 Graph Reports & Analytics'}
               </h2>
               <div className="page-breadcrumb">
-                Chintu AC Portal /{' '}
+                Portal /{' '}
                 <span
                   className="role-chip"
                   style={{
                     background: currentRoleBadge.bg,
                     color: currentRoleBadge.text,
-                    border: `1px solid ${currentRoleBadge.border}`
+                    border: `1.5px solid ${currentRoleBadge.border}`
                   }}
                 >
                   {currentRoleBadge.label}
@@ -1328,16 +1436,16 @@ export default function AdminDashboard() {
               {activeTab === 'businesses' && (
                 <>
                   <button className="btn-add-business" onClick={() => setIsUploadModalOpen(true)}>
-                    📥 Upload Excel
+                    📥 Bulk Import Excel
                   </button>
-                  <button className="btn-add-business" onClick={() => setIsBusinessModalOpen(true)}>
+                  <button className="btn-add-booking" onClick={() => setIsBusinessModalOpen(true)}>
                     + Add Business
                   </button>
                 </>
               )}
               {activeTab === 'dashboard' && (
                 <button className="btn-add-booking" onClick={() => setIsAddModalOpen(true)}>
-                  + Add Booking
+                  + Add Customer Booking
                 </button>
               )}
               {activeTab === 'blogs' && (
@@ -1364,7 +1472,7 @@ export default function AdminDashboard() {
               )}
               {activeTab === 'subscribers' && (
                 <button className="btn-add-business" onClick={exportSubscribersCSV}>
-                  ⬇ Export CSV
+                  ⬇ Export Subscribers
                 </button>
               )}
             </div>
@@ -1377,11 +1485,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 4 DYNAMIC LIVE METRIC CARDS (FIXED AT TOP) */}
+          {/* DYNAMIC METRIC STATS */}
           {canAccess('inquiries') && (
             <div className="top-stats-grid">
               {statCards.map((card) => (
-                <div key={card.key} className="stat-card" style={{ borderTop: `4px solid ${card.color}` }}>
+                <div key={card.key} className="stat-card" style={{ borderLeft: `5px solid ${card.color}` }}>
                   <div className="stat-icon-wrap" style={{ background: card.bg }}>
                     {card.icon}
                   </div>
@@ -1394,25 +1502,25 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ANALYTICS OVERVIEW TOGGLE BAR (FIXED AT TOP) */}
+          {/* ANALYTICS COLLAPSIBLE TOGGLE */}
           {activeTab === 'dashboard' && (
             <>
               <div className="chart-toggle-bar">
                 <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a' }}>
-                  📈 Analytics Overview & Booking Flow
+                  📈 Booking Volume Trends & Statistics
                 </span>
                 <button
                   className="chart-toggle-btn"
                   onClick={() => setShowChart(!showChart)}
                 >
-                  {showChart ? '▲ Hide Graph' : '▼ Show Graph'}
+                  {showChart ? '▲ Hide Graph' : '▼ Show Trend Graph'}
                 </button>
               </div>
 
               <div className={`chart-card-wrapper ${showChart ? 'open' : ''}`}>
                 <div className="chart-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>Lead Inquiries Trend</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#0f172a' }}>Lead Trend Timeline</span>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       {['day', 'month', 'year'].map((item) => (
                         <button
@@ -1422,23 +1530,25 @@ export default function AdminDashboard() {
                             borderRadius: '6px',
                             border: 'none',
                             background: range === item ? '#0284c7' : '#e2e8f0',
-                            color: range === item ? '#fff' : '#475569',
+                            color: range === item ? '#ffffff' : '#334155',
                             cursor: 'pointer',
-                            fontSize: '0.75rem',
-                            fontWeight: 700
+                            fontSize: '0.74rem',
+                            fontWeight: 800
                           }}
                           onClick={() => setRange(item)}
                         >
-                          {item}
+                          {item.toUpperCase()}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div style={{ height: '200px' }}>
+                  <div style={{ height: '190px' }}>
                     {chartData.labels.length > 0 ? (
                       <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
                     ) : (
-                      <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#64748b' }}>Loading analytics...</div>
+                      <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#64748b', fontWeight: 700 }}>
+                        Loading analytics…
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1447,8 +1557,9 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* 📜 SCROLLABLE BOTTOM CONTENT (Slider + Inquiries 30 Per Page) */}
+        {/* SCROLLABLE BODY */}
         <div className="scrollable-body-section">
+          {/* ============ TAB 1: CUSTOMER INQUIRIES ============ */}
           {activeTab === 'dashboard' && (
             <>
               {/* HORIZONTAL QUICK SLIDER STRIP */}
@@ -1463,7 +1574,7 @@ export default function AdminDashboard() {
                     { id: 'Pending', label: 'Pending Response', icon: '⏳' },
                     { id: 'In Progress', label: 'In Progress', icon: '🔄' },
                     { id: 'Resolved', label: 'Resolved Tickets', icon: '✅' },
-                    { id: 'Cancelled', label: 'Cancelled / Spam', icon: '❌' }
+                    { id: 'Cancelled', label: 'Cancelled', icon: '❌' }
                   ].map((slide) => {
                     const count =
                       slide.id === 'All'
@@ -1493,7 +1604,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* SEARCH BAR */}
+              {/* SEARCH */}
               <div className="search-bar-wrap">
                 <input
                   type="text"
@@ -1505,43 +1616,36 @@ export default function AdminDashboard() {
                 <button className="search-btn" onClick={fetchInquiries}>Search</button>
               </div>
 
-              {/* INQUIRIES TABLE (30 RECORDS PER PAGE) */}
+              {/* TABLE */}
               <div className="table-container">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Date</th>
+                      <th>Booking Date</th>
                       <th>Customer Name</th>
                       <th>Mobile Number</th>
-                      <th>State</th>
-                      <th>City</th>
+                      <th>Location</th>
                       <th>Service Category</th>
                       <th>Live Status</th>
-                      <th>Actions</th>
+                      <th>Action Buttons</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedInquiries.length > 0 ? (
                       paginatedInquiries.map((inq) => (
                         <tr key={inq._id}>
-                          <td>{new Date(inq.createdAt).toLocaleDateString()}</td>
-                          <td><strong>{inq.name}</strong></td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{new Date(inq.createdAt).toLocaleDateString()}</td>
+                          <td><strong style={{ color: '#0f172a' }}>{inq.name}</strong></td>
                           <td>
                             <a href={`tel:${inq.mobile}`} className="contact-link">📞 {inq.mobile}</a>
                           </td>
-                          <td>{inq.state || 'Delhi (NCT)'}</td>
-                          <td>{inq.city}</td>
+                          <td>{inq.city}, {inq.state || 'Delhi (NCT)'}</td>
                           <td><span className="service-tag">{inq.serviceType}</span></td>
                           <td>
                             <select
                               value={inq.status || 'Pending'}
                               onChange={(e) => handleStatusChange(inq._id, e.target.value)}
-                              style={{
-                                padding: '5px 8px',
-                                borderRadius: '6px',
-                                fontWeight: 700,
-                                border: '1px solid #cbd5e1'
-                              }}
+                              className="status-select-box"
                             >
                               <option value="Pending">⏳ Pending</option>
                               <option value="In Progress">🔄 In Progress</option>
@@ -1550,30 +1654,31 @@ export default function AdminDashboard() {
                             </select>
                           </td>
                           <td>
-                            {/* ✅ VIEW BUTTON TRIGGERS CLEAN POP-UP MODAL */}
-                            <button
-                              className="admin-action-btn btn-view"
-                              onClick={() => setViewItem(inq)}
-                            >
-                              👁 View
-                            </button>
-                            <button
-                              className="admin-action-btn btn-delete"
-                              onClick={() => handleDelete(inq._id)}
-                            >
-                              🗑 Delete
-                            </button>
+                            <div className="action-btn-group">
+                              <button
+                                className="admin-action-btn btn-view"
+                                onClick={() => setViewItem(inq)}
+                              >
+                                👁 View Details
+                              </button>
+                              <button
+                                className="admin-action-btn btn-delete"
+                                onClick={() => handleDelete(inq._id)}
+                              >
+                                🗑 Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
                     ) : (
-                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>No inquiries found.</td></tr>
+                      <tr><td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>No customer bookings found.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
 
-              {/* PAGINATION CONTROLS (30 PER PAGE) */}
+              {/* PAGINATION */}
               {filteredInquiries.length > itemsPerPage && (
                 <div className="pagination-bar">
                   <div className="pagination-info">
@@ -1619,14 +1724,14 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ============ TAB 2: BUSINESSES ============ */}
+          {/* ============ TAB 2: BUSINESS BOOKINGS ============ */}
           {activeTab === 'businesses' && (
             <>
               <div className="search-bar-wrap">
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="🔍 Search Business Name, City or Phone..."
+                  placeholder="🔍 Search Business Agency, Owner, Phone or City..."
                   value={businessSearch}
                   onChange={(e) => setBusinessSearch(e.target.value)}
                 />
@@ -1637,40 +1742,73 @@ export default function AdminDashboard() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Business Name</th>
-                      <th>Owner</th>
-                      <th>State</th>
-                      <th>City</th>
-                      <th>Contact</th>
-                      <th>Service</th>
-                      <th>Status</th>
+                      <th>Business Agency</th>
+                      <th>Owner / Tech</th>
+                      <th>Phone Number</th>
+                      <th>Location</th>
+                      <th>Service Specialty</th>
+                      <th>Payment</th>
+                      <th>Live Status</th>
+                      <th>Action Buttons</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {businesses.length > 0 ? (
-                      businesses.map((biz) => (
+                    {filteredBusinesses.length > 0 ? (
+                      filteredBusinesses.map((biz) => (
                         <tr key={biz._id}>
-                          <td><strong>{biz.businessName}</strong></td>
+                          <td><strong style={{ color: '#0f172a' }}>{biz.businessName}</strong></td>
                           <td>{biz.ownerName}</td>
-                          <td>{biz.state || 'Delhi (NCT)'}</td>
-                          <td>{biz.city}</td>
-                          <td><a href={`tel:${biz.phone}`} className="contact-link">📞 {biz.phone}</a></td>
+                          <td>
+                            <a href={`tel:${biz.phone}`} className="contact-link">📞 {biz.phone}</a>
+                          </td>
+                          <td>{biz.city}, {biz.state || 'Delhi (NCT)'}</td>
                           <td><span className="service-tag-warn">{biz.serviceCategory}</span></td>
+                          <td>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.76rem',
+                                fontWeight: 800,
+                                background: biz.isPaid ? '#dcfce7' : '#fee2e2',
+                                color: biz.isPaid ? '#15803d' : '#b91c1c'
+                              }}
+                            >
+                              {biz.isPaid ? '✓ Paid' : 'Unpaid'}
+                            </span>
+                          </td>
                           <td>
                             <select
                               value={biz.status || 'Active'}
                               onChange={(e) => handleBusinessStatusChange(biz._id, e.target.value)}
+                              className="status-select-box"
                             >
                               <option value="Active">✅ Active</option>
-                              <option value="Pending">🕒 Pending review</option>
+                              <option value="Pending">🕒 Pending</option>
                               <option value="Inactive">⏳ Inactive</option>
                               <option value="Suspended">❌ Suspended</option>
                             </select>
                           </td>
+                          <td>
+                            <div className="action-btn-group">
+                              <button
+                                className="admin-action-btn btn-view"
+                                onClick={() => setViewBusiness(biz)}
+                              >
+                                👁 View Details
+                              </button>
+                              <button
+                                className="admin-action-btn btn-delete"
+                                onClick={() => handleDeleteBusiness(biz._id)}
+                              >
+                                🗑 Delete
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     ) : (
-                      <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px' }}>No registered businesses found.</td></tr>
+                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>No registered business bookings found.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1692,7 +1830,7 @@ export default function AdminDashboard() {
                 <button className="search-btn" onClick={fetchBlogs}>Search</button>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
                 <button
                   className={`page-btn ${blogStatusFilter === 'All' ? 'active' : ''}`}
                   onClick={() => setBlogStatusFilter('All')}
@@ -1738,15 +1876,15 @@ export default function AdminDashboard() {
                               <img
                                 src={getImageUrl(b.imageUrl)}
                                 alt=""
-                                style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 6 }}
+                                style={{ width: 56, height: 38, objectFit: 'cover', borderRadius: 6 }}
                               />
                             ) : (
-                              <div style={{ width: 60, height: 40, background: '#e0f2fe', borderRadius: 6, display: 'grid', placeItems: 'center' }}>
+                              <div style={{ width: 56, height: 38, background: '#e0f2fe', borderRadius: 6, display: 'grid', placeItems: 'center' }}>
                                 📝
                               </div>
                             )}
                           </td>
-                          <td><strong>{b.title}</strong></td>
+                          <td><strong style={{ color: '#0f172a' }}>{b.title}</strong></td>
                           <td><span className="service-tag">{b.category}</span></td>
                           <td>{b.author}</td>
                           <td>
@@ -1756,7 +1894,7 @@ export default function AdminDashboard() {
                           </td>
                           <td>
                             {b.galleryImages?.length > 0 ? (
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0284c7' }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0284c7' }}>
                                 📸 {b.galleryImages.length} extra
                               </span>
                             ) : (
@@ -1765,28 +1903,30 @@ export default function AdminDashboard() {
                           </td>
                           <td>{new Date(b.createdAt).toLocaleDateString()}</td>
                           <td>
-                            {b.status !== 'Published' ? (
-                              <button
-                                className="admin-action-btn btn-approve"
-                                onClick={() => handleBlogStatusUpdate(b._id, 'Published')}
-                              >
-                                ✓ Approve
-                              </button>
-                            ) : (
-                              <button
-                                className="admin-action-btn btn-reject"
-                                onClick={() => handleBlogStatusUpdate(b._id, 'Draft')}
-                              >
-                                Hide
-                              </button>
-                            )}
-                            <button className="admin-action-btn btn-view" onClick={() => handleEditBlog(b)}>✏ Edit</button>
-                            <button className="admin-action-btn btn-delete" onClick={() => handleBlogDelete(b._id)}>🗑</button>
+                            <div className="action-btn-group">
+                              {b.status !== 'Published' ? (
+                                <button
+                                  className="admin-action-btn btn-approve"
+                                  onClick={() => handleBlogStatusUpdate(b._id, 'Published')}
+                                >
+                                  ✓ Approve
+                                </button>
+                              ) : (
+                                <button
+                                  className="admin-action-btn btn-reject"
+                                  onClick={() => handleBlogStatusUpdate(b._id, 'Draft')}
+                                >
+                                  Hide
+                                </button>
+                              )}
+                              <button className="admin-action-btn btn-view" onClick={() => handleEditBlog(b)}>✏ Edit</button>
+                              <button className="admin-action-btn btn-delete" onClick={() => handleBlogDelete(b._id)}>🗑</button>
+                            </div>
                           </td>
                         </tr>
                       ))
                     ) : (
-                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px' }}>No blogs found.</td></tr>
+                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>No blogs found.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1811,16 +1951,18 @@ export default function AdminDashboard() {
                 <tbody>
                   {filteredComments.map((c) => (
                     <tr key={c._id}>
-                      <td><strong>{c.name}</strong></td>
+                      <td><strong style={{ color: '#0f172a' }}>{c.name}</strong></td>
                       <td><a href={`mailto:${c.email}`} className="contact-link">✉ {c.email}</a></td>
-                      <td>{c.message}</td>
+                      <td style={{ maxWidth: 320 }}>{c.message}</td>
                       <td>{c.blog?.title || 'Deleted blog'}</td>
                       <td><span className="service-tag">{c.status}</span></td>
                       <td>
-                        {c.status !== 'Approved' && (
-                          <button className="admin-action-btn btn-approve" onClick={() => handleCommentStatus(c._id, 'Approved')}>✓ Approve</button>
-                        )}
-                        <button className="admin-action-btn btn-delete" onClick={() => handleCommentDelete(c._id)}>🗑</button>
+                        <div className="action-btn-group">
+                          {c.status !== 'Approved' && (
+                            <button className="admin-action-btn btn-approve" onClick={() => handleCommentStatus(c._id, 'Approved')}>✓ Approve</button>
+                          )}
+                          <button className="admin-action-btn btn-delete" onClick={() => handleCommentDelete(c._id)}>🗑</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1838,14 +1980,14 @@ export default function AdminDashboard() {
                     <th>Email</th>
                     <th>Status</th>
                     <th>Source</th>
-                    <th>Date</th>
+                    <th>Subscribed On</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredSubscribers.map((s) => (
                     <tr key={s._id}>
-                      <td><strong>{s.email}</strong></td>
+                      <td><strong style={{ color: '#0f172a' }}>{s.email}</strong></td>
                       <td><span className="service-tag">{s.status}</span></td>
                       <td>{s.source}</td>
                       <td>{new Date(s.createdAt).toLocaleDateString()}</td>
@@ -1861,29 +2003,37 @@ export default function AdminDashboard() {
 
           {/* ============ TAB 6: REPORTS ============ */}
           {activeTab === 'reports' && (
-            <div className="chart-card">
-              <h3 style={{ margin: '0 0 16px' }}>🥧 Service Distribution</h3>
-              <div style={{ height: '340px' }}>
-                <Doughnut data={serviceReport} options={{ responsive: true, maintainAspectRatio: false }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+              <div className="table-container" style={{ padding: '20px' }}>
+                <h3 style={{ margin: '0 0 14px', fontSize: '1.1rem', color: '#0f172a' }}>📈 Registered Businesses</h3>
+                <div style={{ height: '280px' }}>
+                  <Line data={businessReport} options={{ responsive: true, maintainAspectRatio: false }} />
+                </div>
+              </div>
+              <div className="table-container" style={{ padding: '20px' }}>
+                <h3 style={{ margin: '0 0 14px', fontSize: '1.1rem', color: '#0f172a' }}>🥧 Inquiries by Category</h3>
+                <div style={{ height: '280px' }}>
+                  <Doughnut data={serviceReport} options={{ responsive: true, maintainAspectRatio: false }} />
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ============ 3. INQUIRY POP-UP MODAL (CUSTOMER NAME AT TOP, LEFT-ALIGNED) ============ */}
+      {/* ============ 3. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL (CUSTOMER) ============ */}
       {viewItem && (
         <div className="modal-overlay" onClick={() => setViewItem(null)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewItem(null)}>✕</button>
 
-            {/* CUSTOMER NAME TOP HERO */}
+            {/* Customer Name Prominently at the Very Top Left */}
             <h2 className="modal-customer-name-hero">{viewItem.name}</h2>
             <p className="modal-customer-sub">
-              Customer Lead ID: <span style={{ color: '#0284c7' }}>#{viewItem._id.slice(-6).toUpperCase()}</span> · Received On {new Date(viewItem.createdAt).toLocaleString()}
+              Booking Lead ID: <span style={{ color: '#0284c7' }}>#{viewItem._id.slice(-6).toUpperCase()}</span> · Received {new Date(viewItem.createdAt).toLocaleString()}
             </p>
 
-            {/* LEFT-ALIGNED METADATA GRID */}
+            {/* Filled Details Stacked in Left-Aligned Grid */}
             <div className="modal-info-grid">
               <div className="modal-info-item">
                 <strong>Phone Number</strong>
@@ -1894,20 +2044,24 @@ export default function AdminDashboard() {
                 <span>{viewItem.email || 'Not Provided'}</span>
               </div>
               <div className="modal-info-item">
-                <strong>Service Requested</strong>
+                <strong>Service Category</strong>
                 <span style={{ color: '#0369a1' }}>{viewItem.serviceType}</span>
               </div>
               <div className="modal-info-item">
-                <strong>Preferred Date</strong>
+                <strong>Preferred Visit Date</strong>
                 <span>{viewItem.date ? new Date(viewItem.date).toLocaleDateString() : 'Immediate Visit'}</span>
               </div>
               <div className="modal-info-item" style={{ gridColumn: 'span 2' }}>
-                <strong>Location</strong>
+                <strong>Customer Location</strong>
                 <span>📍 {viewItem.city}, {viewItem.state || 'Delhi (NCT)'}</span>
+              </div>
+              <div className="modal-info-item" style={{ gridColumn: 'span 2' }}>
+                <strong>Current Status</strong>
+                <span style={{ color: '#ff8a00' }}>{viewItem.status || 'Pending'}</span>
               </div>
             </div>
 
-            {/* ISSUE / MESSAGE DESCRIPTION (LEFT-ALIGNED) */}
+            {/* Issue Description Left-Aligned */}
             <div className="modal-message-section">
               <strong>Appliance Problem & Customer Message</strong>
               <div className="modal-message-box">
@@ -1915,7 +2069,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* QUICK STATUS ACTIONS (LEFT-ALIGNED) */}
+            {/* Bottom Actions */}
             <div className="modal-bottom-actions">
               <button
                 type="button"
@@ -1935,58 +2089,133 @@ export default function AdminDashboard() {
               </button>
               <button
                 type="button"
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f1f5f9',
-                  color: '#475569',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-                onClick={() => setViewItem(null)}
+                className="admin-action-btn btn-delete"
+                style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+                onClick={() => handleDelete(viewItem._id)}
               >
-                Close ✕
+                🗑 Delete Booking
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ============ ADD BOOKING MODAL ============ */}
+      {/* ============ 4. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL (BUSINESS) ============ */}
+      {viewBusiness && (
+        <div className="modal-overlay" onClick={() => setViewBusiness(null)}>
+          <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setViewBusiness(null)}>✕</button>
+
+            {/* Business Name at Very Top Left */}
+            <h2 className="modal-customer-name-hero">{viewBusiness.businessName}</h2>
+            <p className="modal-customer-sub">
+              Vendor Profile ID: <span style={{ color: '#ff8a00' }}>#{viewBusiness._id.slice(-6).toUpperCase()}</span> · Registered {new Date(viewBusiness.createdAt).toLocaleString()}
+            </p>
+
+            {/* Sequential Filled Details Grid */}
+            <div className="modal-info-grid">
+              <div className="modal-info-item">
+                <strong>Owner / Technician</strong>
+                <span>{viewBusiness.ownerName}</span>
+              </div>
+              <div className="modal-info-item">
+                <strong>Contact Phone</strong>
+                <a href={`tel:${viewBusiness.phone}`} style={{ color: '#0284c7' }}>📞 {viewBusiness.phone}</a>
+              </div>
+              <div className="modal-info-item">
+                <strong>Service Specialty</strong>
+                <span style={{ color: '#c2410c' }}>{viewBusiness.serviceCategory}</span>
+              </div>
+              <div className="modal-info-item">
+                <strong>Payment Status</strong>
+                <span style={{ color: viewBusiness.isPaid ? '#15803d' : '#b91c1c' }}>
+                  {viewBusiness.isPaid ? '✓ Paid Vendor' : '⚠ Unpaid'}
+                </span>
+              </div>
+              <div className="modal-info-item" style={{ gridColumn: 'span 2' }}>
+                <strong>Operating Location</strong>
+                <span>📍 {viewBusiness.city}, {viewBusiness.state || 'Delhi (NCT)'}</span>
+              </div>
+              <div className="modal-info-item" style={{ gridColumn: 'span 2' }}>
+                <strong>Listing Status</strong>
+                <span style={{ textTransform: 'uppercase' }}>{viewBusiness.status || 'Active'}</span>
+              </div>
+            </div>
+
+            <div className="modal-bottom-actions">
+              <button
+                type="button"
+                className="admin-action-btn btn-approve"
+                style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+                onClick={() => handleBusinessStatusChange(viewBusiness._id, 'Active')}
+              >
+                ✓ Set Active
+              </button>
+              <button
+                type="button"
+                className="admin-action-btn btn-reject"
+                style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+                onClick={() => handleBusinessStatusChange(viewBusiness._id, 'Suspended')}
+              >
+                🚫 Suspend
+              </button>
+              <button
+                type="button"
+                className="admin-action-btn btn-delete"
+                style={{ padding: '10px 18px', fontSize: '0.88rem' }}
+                onClick={() => handleDeleteBusiness(viewBusiness._id)}
+              >
+                🗑 Delete Business
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============ MODAL: ADD CUSTOMER BOOKING ============ */}
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsAddModalOpen(false)}>✕</button>
-            <h3 style={{ margin: '0 0 16px' }}>📝 Add Manual Customer Booking</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#0f172a', textAlign: 'left' }}>📝 Add Customer Booking</h3>
             <form onSubmit={handleAddSubmit}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Customer Name *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Customer Name *</label>
                 <input
-                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', outline: 'none', textAlign: 'left' }}
                   value={newInquiry.name} onChange={(e) => setNewInquiry({ ...newInquiry, name: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Mobile Number *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Mobile Number *</label>
                 <input
-                  type="tel" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="tel" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', outline: 'none', textAlign: 'left' }}
                   value={newInquiry.mobile} onChange={(e) => setNewInquiry({ ...newInquiry, mobile: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Service Category</label>
+              {/* 🔵 BLUE THEMED CATEGORY SELECT IN ADD FORM */}
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', color: '#0284c7', textAlign: 'left' }}>Select Category *</label>
                 <select
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff' }}
+                  className="select-category-blue"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', textAlign: 'left' }}
                   value={newInquiry.serviceType} onChange={(e) => setNewInquiry({ ...newInquiry, serviceType: e.target.value })}
                 >
                   {APPLIANCE_SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Problem Description *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Operating City *</label>
+                <input
+                  type="text" required placeholder="City name"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', outline: 'none', textAlign: 'left' }}
+                  value={newInquiry.city} onChange={(e) => setNewInquiry({ ...newInquiry, city: e.target.value })}
+                />
+              </div>
+              <div style={{ marginBottom: '18px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Problem Description *</label>
                 <textarea
-                  rows="3" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  rows="3" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', outline: 'none', textAlign: 'left' }}
                   value={newInquiry.message} onChange={(e) => setNewInquiry({ ...newInquiry, message: e.target.value })}
                 />
               </div>
@@ -1998,33 +2227,51 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ REGISTER BUSINESS MODAL ============ */}
+      {/* ============ MODAL: REGISTER BUSINESS ============ */}
       {isBusinessModalOpen && (
         <div className="modal-overlay" onClick={() => setIsBusinessModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsBusinessModalOpen(false)}>✕</button>
-            <h3 style={{ margin: '0 0 16px' }}>🏢 Register New Business Vendor</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#0f172a', textAlign: 'left' }}>🏢 Register New Business Vendor</h3>
             <form onSubmit={handleBusinessSubmit}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Business Name *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Business Agency Name *</label>
                 <input
-                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBusiness.businessName} onChange={(e) => setNewBusiness({ ...newBusiness, businessName: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Owner Name *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Owner Name *</label>
                 <input
-                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBusiness.ownerName} onChange={(e) => setNewBusiness({ ...newBusiness, ownerName: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Phone *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Contact Phone *</label>
                 <input
-                  type="tel" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="tel" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBusiness.phone} onChange={(e) => setNewBusiness({ ...newBusiness, phone: e.target.value })}
                 />
+              </div>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>City *</label>
+                <input
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
+                  value={newBusiness.city} onChange={(e) => setNewBusiness({ ...newBusiness, city: e.target.value })}
+                />
+              </div>
+              {/* 🔵 BLUE THEMED CATEGORY SELECT IN BUSINESS FORM */}
+              <div style={{ marginBottom: '18px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', color: '#0284c7', textAlign: 'left' }}>Select Category</label>
+                <select
+                  className="select-category-blue"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', textAlign: 'left' }}
+                  value={newBusiness.serviceCategory} onChange={(e) => setNewBusiness({ ...newBusiness, serviceCategory: e.target.value })}
+                >
+                  {APPLIANCE_SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
               <button type="submit" className="btn-add-business" style={{ width: '100%', justifyContent: 'center' }}>
                 🚀 Save Business Profile
@@ -2034,36 +2281,36 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ BLOG EDIT / CREATE MODAL ============ */}
+      {/* ============ MODAL: BLOG EDIT / CREATE ============ */}
       {isBlogModalOpen && (
         <div className="modal-overlay" onClick={() => setIsBlogModalOpen(false)}>
           <div className="modal-box-left" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsBlogModalOpen(false)}>✕</button>
-            <h3 style={{ margin: '0 0 16px' }}>{editingBlog ? '✏ Edit Article' : '📝 Create Article'}</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#0f172a', textAlign: 'left' }}>{editingBlog ? '✏ Edit Article' : '📝 Create Article'}</h3>
             <form onSubmit={handleBlogSubmit}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Title *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Title *</label>
                 <input
-                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBlog.title} onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Author *</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Author *</label>
                 <input
-                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  type="text" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBlog.author} onChange={(e) => setNewBlog({ ...newBlog, author: e.target.value })}
                 />
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Cover Image</label>
+              <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Cover Image</label>
                 <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
                 {uploadingImage && <small style={{ color: '#0284c7' }}>Uploading...</small>}
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>Content *</label>
+              <div style={{ marginBottom: '18px', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', textAlign: 'left' }}>Content *</label>
                 <textarea
-                  rows="6" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  rows="6" required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid #cbd5e1', textAlign: 'left' }}
                   value={newBlog.content} onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
                 />
               </div>
@@ -2075,19 +2322,19 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ EXCEL IMPORT MODAL ============ */}
+      {/* ============ MODAL: EXCEL IMPORT ============ */}
       {isUploadModalOpen && (
         <div className="modal-overlay" onClick={() => setIsUploadModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setIsUploadModalOpen(false)}>✕</button>
-            <h3 style={{ margin: '0 0 16px' }}>📥 Import Businesses from Excel</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#0f172a', textAlign: 'left' }}>📥 Bulk Import Businesses from Excel</h3>
             <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} />
-            <div style={{ marginTop: '10px' }}>
-              <button type="button" onClick={downloadSampleExcel} style={{ cursor: 'pointer', padding: '6px 12px' }}>
-                ⬇ Download Template
+            <div style={{ marginTop: '10px', textAlign: 'left' }}>
+              <button type="button" onClick={downloadSampleExcel} style={{ cursor: 'pointer', padding: '6px 12px', fontWeight: 700 }}>
+                ⬇ Download Sample Template
               </button>
             </div>
-            {uploadError && <p style={{ color: '#ef4444' }}>{uploadError}</p>}
+            {uploadError && <p style={{ color: '#ef4444', fontWeight: 700, textAlign: 'left' }}>{uploadError}</p>}
             <button
               type="button"
               className="btn-add-business"
@@ -2095,7 +2342,7 @@ export default function AdminDashboard() {
               onClick={handleExcelUpload}
               disabled={isUploading || !uploadFile}
             >
-              {isUploading ? 'Importing...' : '🚀 Import Excel Data'}
+              {isUploading ? 'Importing…' : '🚀 Import Excel Data'}
             </button>
           </div>
         </div>
