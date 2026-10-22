@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import API, { getImageUrl } from '../api';
-import CommentsSection from '../components/CommentsSection';
-import NewsletterForm from '../components/NewsLetterForm';
 
 export default function BlogDetail() {
   const { slug } = useParams();
@@ -12,6 +10,11 @@ export default function BlogDetail() {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Comment submission state
+  const [commentForm, setCommentForm] = useState({ name: '', email: '', message: '' });
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentSuccess, setCommentSuccess] = useState('');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -31,6 +34,22 @@ export default function BlogDetail() {
     };
     fetchBlog();
   }, [slug]);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentForm.name || !commentForm.email || !commentForm.message) return;
+    setCommentSubmitting(true);
+    setCommentSuccess('');
+    try {
+      await API.post(`/api/blogs/${blog?._id || slug}/comments`, commentForm);
+      setCommentSuccess('Comment submitted! It will appear once approved by admin.');
+      setCommentForm({ name: '', email: '', message: '' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit comment');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -286,7 +305,7 @@ export default function BlogDetail() {
           font-size: 1.05rem;
         }
 
-        /* Supporting Images Styling */
+        /* Gallery Grid */
         .blog-gallery-wrap {
           margin-top: 36px;
           padding-top: 28px;
@@ -317,9 +336,7 @@ export default function BlogDetail() {
           object-fit: cover;
           transition: transform 0.3s ease;
         }
-        .blog-gallery-card:hover img {
-          transform: scale(1.03);
-        }
+        .blog-gallery-card:hover img { transform: scale(1.03); }
 
         .blog-detail-footer {
           margin-top: 40px;
@@ -331,142 +348,60 @@ export default function BlogDetail() {
           flex-wrap: wrap;
           gap: 16px;
         }
-        .blog-detail-author-box {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
+        .blog-detail-author-box { display: flex; align-items: center; gap: 14px; }
         .blog-author-avatar {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
+          width: 52px; height: 52px; border-radius: 50%;
           background: linear-gradient(135deg, #0284c7, #0369a1);
-          display: grid;
-          place-items: center;
-          color: #fff;
-          font-weight: 900;
-          font-size: 1.1rem;
+          display: grid; place-items: center; color: #fff;
+          font-weight: 900; font-size: 1.1rem;
           box-shadow: 0 8px 18px rgba(2, 132, 199, 0.3);
         }
-        .blog-author-info strong {
-          display: block;
-          color: #0f172a;
-          font-weight: 800;
-          font-size: 0.95rem;
-        }
-        .blog-author-info span {
-          color: #64748b;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
+        .blog-author-info strong { display: block; color: #0f172a; font-weight: 800; font-size: 0.95rem; }
+        .blog-author-info span { color: #64748b; font-size: 0.8rem; font-weight: 600; }
 
-        .blog-share-group {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-        .blog-share-label {
-          font-size: 0.8rem;
-          font-weight: 700;
-          color: #64748b;
-          margin-right: 4px;
-        }
+        .blog-share-group { display: flex; gap: 8px; align-items: center; }
+        .blog-share-label { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-right: 4px; }
         .blog-share-btn {
-          width: 38px;
-          height: 38px;
-          display: grid;
-          place-items: center;
-          border-radius: 10px;
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
-          font-size: 1rem;
-          cursor: pointer;
-          text-decoration: none;
-          color: #475569;
+          width: 38px; height: 38px; display: grid; place-items: center;
+          border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0;
+          font-size: 1rem; cursor: pointer; text-decoration: none; color: #475569;
           transition: all 0.2s ease;
         }
         .blog-share-btn:hover {
-          background: #0284c7;
-          color: #fff;
-          transform: translateY(-2px);
-          border-color: transparent;
-          box-shadow: 0 8px 16px rgba(2, 132, 199, 0.3);
+          background: #0284c7; color: #fff; transform: translateY(-2px);
+          border-color: transparent; box-shadow: 0 8px 16px rgba(2, 132, 199, 0.3);
         }
 
-        .blog-related {
-          max-width: 1080px;
-          margin: 60px auto 0;
+        /* Embedded Comments Section */
+        .embedded-comments-section {
+          max-width: 860px;
+          margin: 40px auto 0;
           padding: 0 20px;
         }
-        .blog-related-title {
-          font-size: 1.5rem;
-          font-weight: 900;
-          color: #0f172a;
-          margin: 0 0 24px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          letter-spacing: -0.02em;
-        }
-        .blog-related-title::before {
-          content: "";
-          width: 4px;
-          height: 24px;
-          background: linear-gradient(180deg, #ff8a00, #facc15);
-          border-radius: 99px;
-        }
-        .blog-related-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 22px;
-        }
-
-        .related-card {
-          background: #fff;
-          border-radius: 14px;
-          overflow: hidden;
-          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        .comments-box {
+          background: #ffffff;
+          border-radius: 20px;
+          padding: 32px;
           border: 1px solid #e2e8f0;
-          text-decoration: none;
-          color: inherit;
-          display: block;
-          transition: all 0.3s ease;
+          box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
         }
-        .related-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+        .comments-box h3 { margin: 0 0 20px; font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+        .comment-field { margin-bottom: 14px; }
+        .comment-field label { display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 5px; }
+        .comment-field input, .comment-field textarea {
+          width: 100%; padding: 10px 14px; border-radius: 10px;
+          border: 1.5px solid #cbd5e1; font-size: 0.9rem; font-family: inherit;
+          box-sizing: border-box; outline: none;
         }
-        .related-card-img {
-          height: 150px;
-          background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-          display: grid;
-          place-items: center;
-          font-size: 2.5rem;
-          opacity: 0.85;
+        .comment-field input:focus, .comment-field textarea:focus {
+          border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
         }
-        .related-card-img img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+        .btn-submit-comment {
+          background: linear-gradient(135deg, #0284c7, #0369a1);
+          color: #fff; border: none; padding: 11px 24px; border-radius: 10px;
+          font-weight: 700; cursor: pointer; transition: all 0.2s ease;
         }
-        .related-card-body { padding: 16px 18px 18px; }
-        .related-card-title {
-          font-size: 1rem;
-          font-weight: 800;
-          color: #0f172a;
-          margin: 0 0 8px;
-          line-height: 1.35;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .related-card-meta {
-          font-size: 0.78rem;
-          color: #64748b;
-          font-weight: 600;
-        }
+        .btn-submit-comment:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .blog-detail-cta {
           max-width: 860px;
@@ -475,71 +410,41 @@ export default function BlogDetail() {
         }
         .blog-cta-box {
           background: linear-gradient(135deg, #0284c7, #0369a1);
-          color: #fff;
-          padding: 34px 32px;
-          border-radius: 20px;
-          text-align: center;
-          box-shadow: 0 20px 40px rgba(2, 132, 199, 0.25);
-          position: relative;
-          overflow: hidden;
-        }
-        .blog-cta-box::before {
-          content: "";
-          position: absolute;
-          top: -50px; right: -40px;
-          width: 180px; height: 180px;
-          background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
-          border-radius: 50%;
-        }
-        .blog-cta-box h3 {
-          margin: 0 0 8px;
-          font-size: 1.3rem;
-          font-weight: 900;
-          position: relative;
-        }
-        .blog-cta-box p {
-          margin: 0 0 20px;
-          color: #cbd5e1;
-          font-size: 0.95rem;
-          position: relative;
+          color: #fff; padding: 34px 32px; border-radius: 20px;
+          text-align: center; box-shadow: 0 20px 40px rgba(2, 132, 199, 0.25);
         }
         .blog-cta-btn {
-          display: inline-block;
-          background: #ffffff;
-          color: #0284c7;
-          padding: 12px 28px;
-          border-radius: 10px;
-          font-weight: 800;
-          text-decoration: none;
-          font-size: 0.92rem;
-          position: relative;
-          transition: all 0.25s ease;
-          box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-        .blog-cta-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 14px 28px rgba(0,0,0,0.25);
+          display: inline-block; background: #ffffff; color: #0284c7;
+          padding: 12px 28px; border-radius: 10px; font-weight: 800;
+          text-decoration: none; font-size: 0.92rem; margin-top: 14px;
         }
 
-        .blog-newsletter-wrap {
-          max-width: 720px;
-          margin: 50px auto 0;
+        .blog-related {
+          max-width: 860px;
+          margin: 60px auto 0;
           padding: 0 20px;
         }
+        .blog-related-title {
+          font-size: 1.4rem; font-weight: 900; color: #0f172a; margin-bottom: 20px;
+        }
+        .blog-related-grid {
+          display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;
+        }
+        .related-card {
+          background: #fff; border-radius: 14px; overflow: hidden;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06); border: 1px solid #e2e8f0;
+          text-decoration: none; color: inherit; display: block;
+        }
+        .related-card-img {
+          height: 140px; background: #e0f2fe; display: grid; place-items: center; font-size: 2rem;
+        }
+        .related-card-img img { width: 100%; height: 100%; object-fit: cover; }
+        .related-card-body { padding: 14px 16px; }
 
         @media (max-width: 768px) {
-          .blog-detail-hero { padding: 30px 18px 90px; }
-          .blog-detail-title { font-size: 1.55rem; }
-          .blog-detail-container { margin-top: -50px; }
-          .blog-detail-cover { height: 240px; border-radius: 14px; }
-          .blog-detail-article { padding: 28px 22px; border-radius: 16px; }
-          .blog-detail-content p { font-size: 0.98rem; }
-          .blog-detail-content h1 { font-size: 1.35rem; }
-          .blog-detail-content h2 { font-size: 1.15rem; }
-          .blog-detail-excerpt { font-size: 1rem; }
-          .blog-detail-footer { flex-direction: column; align-items: flex-start; }
-          .blog-related-title { font-size: 1.25rem; }
-          .blog-cta-box { padding: 26px 22px; border-radius: 16px; }
+          .blog-detail-title { font-size: 1.6rem; }
+          .blog-detail-cover { height: 230px; }
+          .blog-detail-article { padding: 24px 20px; }
         }
       `}</style>
 
@@ -547,13 +452,10 @@ export default function BlogDetail() {
       <div className="blog-detail-hero">
         <div className="blog-detail-hero-inner">
           <Link to="/blog" className="blog-back-btn">← Back to Blog</Link>
-
           <div>
             <span className="blog-detail-category">{blog.category}</span>
           </div>
-
           <h1 className="blog-detail-title">{blog.title}</h1>
-
           <div className="blog-detail-meta">
             <span className="blog-detail-meta-item">
               ✍ By <strong>{blog.author}</strong>
@@ -584,7 +486,7 @@ export default function BlogDetail() {
             {renderContent(blog.content)}
           </div>
 
-          {/* SUPPORTING GALLERY IMAGES */}
+          {/* GALLERY IMAGES */}
           {blog.galleryImages && blog.galleryImages.length > 0 && (
             <div className="blog-gallery-wrap">
               <h3 className="blog-gallery-title">📸 Supporting Photos & Inspection</h3>
@@ -613,37 +515,21 @@ export default function BlogDetail() {
               <span className="blog-share-label">Share:</span>
               <a
                 className="blog-share-btn"
-                href={`https://wa.me/?text=${encodeURIComponent(blog.title + ' ' + window.location.href)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(blog.title + ' ' + (typeof window !== 'undefined' ? window.location.href : ''))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Share on WhatsApp"
               >
                 💬
               </a>
-              <a
-                className="blog-share-btn"
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(blog.title)}&url=${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Share on Twitter"
-              >
-                🐦
-              </a>
-              <a
-                className="blog-share-btn"
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Share on Facebook"
-              >
-                📘
-              </a>
               <button
                 className="blog-share-btn"
                 title="Copy link"
                 onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  alert('Link copied to clipboard!');
+                  if (typeof navigator !== 'undefined') {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Link copied to clipboard!');
+                  }
                 }}
               >
                 🔗
@@ -653,24 +539,75 @@ export default function BlogDetail() {
         </article>
       </div>
 
-      {/* COMMENTS */}
-      <CommentsSection blogId={blog._id} initialComments={comments} />
+      {/* INLINE ROBUST COMMENTS SECTION */}
+      <div className="embedded-comments-section">
+        <div className="comments-box">
+          <h3>💬 Comments & Discussion ({comments.length})</h3>
+          
+          {commentSuccess && (
+            <div style={{ background: '#dcfce7', color: '#15803d', padding: '12px', borderRadius: '10px', marginBottom: '16px', fontWeight: 600 }}>
+              {commentSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handleCommentSubmit} style={{ marginBottom: '24px' }}>
+            <div className="comment-field">
+              <label>Your Name *</label>
+              <input
+                type="text" required placeholder="Enter your full name"
+                value={commentForm.name}
+                onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
+              />
+            </div>
+            <div className="comment-field">
+              <label>Your Email *</label>
+              <input
+                type="email" required placeholder="example@gmail.com"
+                value={commentForm.email}
+                onChange={(e) => setCommentForm({ ...commentForm, email: e.target.value })}
+              />
+            </div>
+            <div className="comment-field">
+              <label>Your Comment *</label>
+              <textarea
+                rows="3" required placeholder="Write your question or thoughts here..."
+                value={commentForm.message}
+                onChange={(e) => setCommentForm({ ...commentForm, message: e.target.value })}
+              />
+            </div>
+            <button type="submit" className="btn-submit-comment" disabled={commentSubmitting}>
+              {commentSubmitting ? 'Submitting...' : 'Post Comment'}
+            </button>
+          </form>
+
+          {comments.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {comments.map((c) => (
+                <div key={c._id || Math.random()} style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <strong style={{ color: '#0f172a' }}>{c.name}</strong>
+                    <small style={{ color: '#64748b' }}>{new Date(c.createdAt || Date.now()).toLocaleDateString()}</small>
+                  </div>
+                  <p style={{ margin: 0, color: '#334155', fontSize: '0.92rem' }}>{c.message}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>No approved comments yet. Be the first to share your thoughts!</p>
+          )}
+        </div>
+      </div>
 
       {/* CTA */}
       <div className="blog-detail-cta">
         <div className="blog-cta-box">
-          <h3>Need Expert Appliance Help?</h3>
-          <p>Book a certified technician in minutes. Same-day service available.</p>
+          <h3 style={{ margin: '0 0 8px', fontSize: '1.4rem' }}>Need Expert Appliance Help?</h3>
+          <p style={{ margin: '0 0 16px', color: '#e0f2fe' }}>Book a certified technician in minutes. Same-day service available.</p>
           <Link to="/" className="blog-cta-btn">📞 Book a Service</Link>
         </div>
       </div>
 
-      {/* NEWSLETTER */}
-      <div className="blog-newsletter-wrap">
-        <NewsletterForm />
-      </div>
-
-      {/* RELATED */}
+      {/* RELATED ARTICLES */}
       {related.length > 0 && (
         <div className="blog-related">
           <h2 className="blog-related-title">Related Articles</h2>
@@ -681,15 +618,8 @@ export default function BlogDetail() {
                   {r.imageUrl ? <img src={getImageUrl(r.imageUrl)} alt={r.title} /> : '📝'}
                 </div>
                 <div className="related-card-body">
-                  <h3 className="related-card-title">{r.title}</h3>
-                  <div className="related-card-meta">
-                    {r.category} •{' '}
-                    {new Date(r.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </div>
+                  <h4 style={{ margin: '0 0 6px', color: '#0f172a' }}>{r.title}</h4>
+                  <small style={{ color: '#64748b' }}>{r.category}</small>
                 </div>
               </Link>
             ))}
