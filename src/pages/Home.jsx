@@ -10,8 +10,7 @@ import banner3 from "../assets/4.jpeg";
 import banner4 from "../assets/5.jpeg";
 import banner5 from "../assets/6.jpeg";
 import banner6 from "../assets/7.jpeg";
-import banner8 from "../assets/8.jpeg";
-import banner7 from "../assets/WhatsApp Image 2026-09-05 at 15.45.15.jpeg";
+import banner7 from "../assets/8.jpeg";
 import logo from "../assets/logo.jpeg";
 
 // 29 States & UT fixed list
@@ -76,7 +75,7 @@ export default function Home() {
   const [blogsLoading, setBlogsLoading] = useState(true);
 
   // Slider banner state
-  const bannerImages = [banner1, banner2, banner3, banner4, banner5, banner6, banner7, banner8];
+  const bannerImages = [banner1, banner2, banner3, banner4, banner5, banner6, banner7];
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -125,7 +124,6 @@ export default function Home() {
     setCurrentSlide((prev) => (prev + 1) % bannerImages.length);
   };
 
-  // ✅ Updated Services List including Motors, Fans & Electrical Works
   const services = [
     {
       icon: "❄️",
@@ -525,7 +523,6 @@ export default function Home() {
                 onChange={handleInputChange}
               />
 
-              {/* ✅ UPDATED SELECT SERVICE WITH MOTOR, FAN, WIRING & ELECTRICAL */}
               <label>Select Service *</label>
               <select
                 name="serviceType"
@@ -572,33 +569,48 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating WhatsApp Action Button */}
+      {/* Floating Official WhatsApp Action Button */}
       <a
         href="https://wa.me/919354397318?text=Hello,%20mujhe%20service%20inquiry%20karni%20hai"
-        className="whatsapp-float"
+        className="whatsapp-float-btn"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Chat on WhatsApp"
+        aria-label="Chat with us on WhatsApp"
         style={{
           position: "fixed",
-          bottom: "24px",
-          right: "24px",
+          bottom: "26px",
+          right: "26px",
           backgroundColor: "#25D366",
-          color: "#ffffff",
-          width: "58px",
-          height: "58px",
+          width: "60px",
+          height: "60px",
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "30px",
-          boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
+          boxShadow: "0 6px 18px rgba(37, 211, 102, 0.45)",
           zIndex: 9999,
           textDecoration: "none",
-          transition: "transform 0.2s ease"
+          transition: "transform 0.25s ease, box-shadow 0.25s ease",
+          cursor: "pointer"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(37, 211, 102, 0.6)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 6px 18px rgba(37, 211, 102, 0.45)";
         }}
       >
-        💬
+        <svg
+          viewBox="0 0 32 32"
+          width="34"
+          height="34"
+          fill="#ffffff"
+          style={{ display: "block" }}
+        >
+          <path d="M16 2C8.28 2 2 8.28 2 16c0 2.72.78 5.26 2.14 7.42L2.05 29.5a1 1 0 0 0 1.25 1.24l6.3-1.99A13.9 13.9 0 0 0 16 30c7.72 0 14-6.28 14-14S23.72 2 16 2zm0 25.54a11.53 11.53 0 0 1-5.86-1.61 1 1 0 0 0-.69-.14l-4.5 1.42 1.48-4.32a1 1 0 0 0-.13-.74A11.55 11.55 0 1 1 16 27.54zm6.75-8.49c-.37-.18-2.18-1.07-2.52-1.2-.34-.12-.58-.18-.83.18-.24.37-.95 1.2-1.16 1.45-.22.24-.43.27-.8.09-.37-.18-1.56-.58-2.97-1.84-1.1-1-1.84-2.22-2.06-2.59-.22-.37-.02-.57.16-.75.17-.17.37-.43.55-.65.18-.22.25-.37.37-.62.12-.24.06-.46-.03-.64-.09-.18-.83-2-.1.14-2.74-.3-.72-.61-.62-.83-.63h-.71c-.24 0-.64.09-.98.46-.34.37-1.3 1.27-1.3 3.1 0 1.83 1.33 3.6 1.52 3.84.18.25 2.62 4 6.35 5.61.89.38 1.58.61 2.12.78.89.28 1.7.24 2.34.15.71-.11 2.18-.89 2.49-1.75.31-.86.31-1.6.22-1.75-.09-.16-.34-.25-.71-.43z" />
+        </svg>
       </a>
 
       {/* Footer */}
