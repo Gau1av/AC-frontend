@@ -1224,6 +1224,8 @@ export default function About() {
           <Link to="/services">Services</Link>
           <Link to="/about" className="active">About</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/partners">Partners</Link>
+          <Link to="/blog">Blog</Link>
         </nav>
         <a className="call-btn" href="tel:+919354397318">
           📞 Call Now

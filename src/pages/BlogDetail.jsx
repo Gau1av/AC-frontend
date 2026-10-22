@@ -107,7 +107,7 @@ export default function BlogDetail() {
     );
   }
 
-  const readTime = Math.max(1, Math.ceil((blog.content || '').split(' ').length / 200));
+  const readTime = Math.max(1, Math.ceil((blog.content || '').split(/\s+/).filter(Boolean).length / 200));
   const formattedDate = new Date(blog.createdAt).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
@@ -115,7 +115,7 @@ export default function BlogDetail() {
   });
 
   const renderContent = (content) =>
-    content.split('\n').map((line, i) => {
+    (content || '').split('\n').map((line, i) => {
       const trimmed = line.trim();
       if (!trimmed) return <br key={i} />;
       if (trimmed.startsWith('## ')) return <h2 key={i}>{trimmed.replace('## ', '')}</h2>;
@@ -284,6 +284,41 @@ export default function BlogDetail() {
           color: #10b981;
           font-weight: 800;
           font-size: 1.05rem;
+        }
+
+        /* Supporting Images Styling */
+        .blog-gallery-wrap {
+          margin-top: 36px;
+          padding-top: 28px;
+          border-top: 1px dashed #e2e8f0;
+        }
+        .blog-gallery-title {
+          font-size: 1.2rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 16px;
+        }
+        .blog-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 16px;
+        }
+        .blog-gallery-card {
+          height: 220px;
+          border-radius: 14px;
+          overflow: hidden;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+          border: 1px solid #e2e8f0;
+          background: #f1f5f9;
+        }
+        .blog-gallery-card img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+        .blog-gallery-card:hover img {
+          transform: scale(1.03);
         }
 
         .blog-detail-footer {
@@ -549,6 +584,20 @@ export default function BlogDetail() {
             {renderContent(blog.content)}
           </div>
 
+          {/* SUPPORTING GALLERY IMAGES */}
+          {blog.galleryImages && blog.galleryImages.length > 0 && (
+            <div className="blog-gallery-wrap">
+              <h3 className="blog-gallery-title">📸 Supporting Photos & Inspection</h3>
+              <div className="blog-gallery-grid">
+                {blog.galleryImages.map((img, i) => (
+                  <div key={i} className="blog-gallery-card">
+                    <img src={getImageUrl(img)} alt={`Supporting visual ${i + 1}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="blog-detail-footer">
             <div className="blog-detail-author-box">
               <div className="blog-author-avatar">
@@ -627,7 +676,7 @@ export default function BlogDetail() {
           <h2 className="blog-related-title">Related Articles</h2>
           <div className="blog-related-grid">
             {related.map((r) => (
-              <Link key={r._id} to={`/blog/${r.slug}`} className="related-card">
+              <Link key={r._id} to={`/blog/${r.slug || r._id}`} className="related-card">
                 <div className="related-card-img">
                   {r.imageUrl ? <img src={getImageUrl(r.imageUrl)} alt={r.title} /> : '📝'}
                 </div>

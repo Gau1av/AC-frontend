@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import AdminLogin from './pages/AdminLogin';
@@ -8,8 +7,10 @@ import Contact from './pages/Contact.jsx';
 import About from './pages/About.jsx';
 
 // 📰 Blog Pages Imports
-import BlogList from './pages/BlogList';
+import BlogIndex from './pages/BlogIndex';
 import BlogDetail from './pages/BlogDetail';
+import BlogSubmit from './pages/BlogSubmit';
+import Partners from './pages/Partners';
 
 import './App.css';
 
@@ -22,9 +23,11 @@ export default function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
+        <Route path="/partners" element={<Partners />} />
 
         {/* Blog Routes */}
-        <Route path="/blog" element={<BlogList />} />
+        <Route path="/blog" element={<BlogIndex />} />
+        <Route path="/blog/write" element={<BlogSubmit />} />
         <Route path="/blog/:slug" element={<BlogDetail />} />
 
         {/* Admin Routes */}

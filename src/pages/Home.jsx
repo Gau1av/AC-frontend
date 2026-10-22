@@ -207,6 +207,7 @@ export default function Home() {
           <Link to="/services">Services</Link>
           <Link to="/about">About</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/partners">Partners</Link>
           <Link to="/blog">Blog</Link>
           <Link to="/admin/dashboard" className="admin-link">Admin Portal</Link>
         </nav>
@@ -591,6 +592,7 @@ export default function Home() {
             <Link to="/services">Services</Link>
             <Link to="/about">About Us</Link>
             <Link to="/contact">Contact</Link>
+            <Link to="/partners">Partners</Link>
             <Link to="/blog">Blog</Link>
           </div>
 

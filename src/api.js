@@ -23,7 +23,9 @@ API.interceptors.request.use(
     }
 
     const token = localStorage.getItem('adminToken');
-    const isAdminRoute = config.url?.includes('/api/admin');
+    const isAdminRoute =
+      config.url?.includes('/api/admin') ||
+      config.url?.includes('/api/newsletter/admin');
 
     if (token && isAdminRoute) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -58,8 +60,7 @@ API.interceptors.response.use(
   (response) => {
     if (import.meta.env.DEV) {
       console.log(
-        `✅ ${response.config.method?.toUpperCase()} ${response.config.url} [${response.status}]`,
-        response.data
+        `✅ ${response.config.method?.toUpperCase()} ${response.config.url} [${response.status}]`
       );
     }
     return response;
@@ -77,7 +78,6 @@ API.interceptors.response.use(
         `❌ API Error [${error.response.status}] ${error.config?.method?.toUpperCase()} ${error.config?.baseURL || ''}${error.config?.url}`,
         {
           data: error.response.data,
-          requestBody: error.config?.data,
         }
       );
     } else if (error.request) {

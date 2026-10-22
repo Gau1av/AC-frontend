@@ -1325,6 +1325,8 @@ export default function Contact() {
           <Link to="/services">Services</Link>
           <Link to="/about">About</Link>
           <Link to="/contact" className="active">Contact</Link>
+          <Link to="/partners">Partners</Link>
+          <Link to="/blog">Blog</Link>
         </nav>
 
         <a className="contact-call-btn" href="tel:+919354397318">
