@@ -20,13 +20,32 @@ const INITIAL_FORM = {
   priceRange: ''
 };
 
+// All available service categories
+const ALL_SERVICE_OPTIONS = [
+  'AC Repair & Service',
+  'Refrigerator Repair',
+  'Washing Machine Repair',
+  'Motor Repair & Rewinding',
+  'Fan Repair & Installation',
+  'House Wiring',
+  'All Electric Works',
+  'Microwave Repair',
+  'Preventive Maintenance',
+  'Multi-appliance Service',
+  'Other Home Appliances'
+];
+
 const CATEGORIES = [
   { id: 'All', label: 'All Services', icon: '⚡' },
   { id: 'AC Repair & Service', label: 'AC Repair', icon: '❄️' },
   { id: 'Refrigerator Repair', label: 'Refrigerator', icon: '🧊' },
   { id: 'Washing Machine Repair', label: 'Washing Machine', icon: '🧺' },
+  { id: 'Motor Repair & Rewinding', label: 'Motor Repair', icon: '🔄' },
+  { id: 'Fan Repair & Installation', label: 'Fan Repair', icon: '🪭' },
+  { id: 'House Wiring', label: 'House Wiring', icon: '⚡' },
+  { id: 'All Electric Works', label: 'Electric Works', icon: '🛠️' },
   { id: 'Microwave Repair', label: 'Microwave', icon: '📻' },
-  { id: 'Multi-appliance Service', label: 'Multi-Appliance', icon: '🛠️' }
+  { id: 'Multi-appliance Service', label: 'Multi-Appliance', icon: '🧰' }
 ];
 
 export default function Partners() {
@@ -102,7 +121,7 @@ export default function Partners() {
       if (image) data.append('image', image);
 
       const response = await API.post('/api/businesses/register', data);
-      setMessage({ type: 'success', text: response.data.message });
+      setMessage({ type: 'success', text: response.data.message || 'Partner registration submitted successfully!' });
       setForm(INITIAL_FORM);
       setImage(null);
       setImagePreview('');
@@ -127,7 +146,7 @@ export default function Partners() {
       cleanPhone = `91${cleanPhone.slice(1)}`;
     }
 
-    const text = `Hello ${partner.ownerName || partner.businessName},\nI found your business profile on *Chintu Cool AC Service*.\n\nI want to inquire about your *${partner.serviceCategory || 'repair'}* services in *${partner.city || 'my city'}*. Are you available for a doorstep visit?`;
+    const text = `Hello ${partner.ownerName || partner.businessName},\nI found your business profile on *Chintu Cool AC Service*.\n\nI want to inquire about your *${partner.serviceCategory || 'repair'}* services in *${partner.city || 'my area'}*. Are you available for a doorstep visit?`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   };
 
@@ -170,9 +189,9 @@ export default function Partners() {
       </header>
 
       <section className="partners-hero">
-        <p className="partners-eyebrow">LOCAL APPLIANCE EXPERTS</p>
+        <p className="partners-eyebrow">LOCAL APPLIANCE & ELECTRICAL EXPERTS</p>
         <h1>Meet trusted service partners near you</h1>
-        <p>Explore verified technicians and appliance specialists, or list your repair business in our directory.</p>
+        <p>Explore verified technicians, motor winders, and appliance specialists, or list your service business in our directory.</p>
         <a href="#partner-form" className="partners-primary-button">List your business</a>
       </section>
 
@@ -193,7 +212,7 @@ export default function Partners() {
           </label>
         </div>
 
-        {/* Quick Category Tabs */}
+        {/* Quick Category Tabs with all Service Categories */}
         <div className="partner-category-tabs" role="tablist" aria-label="Filter partners by service">
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
@@ -201,8 +220,8 @@ export default function Partners() {
               cat.id === 'All'
                 ? partners.length
                 : partners.filter((p) =>
-                    p.serviceCategory?.toLowerCase().includes(cat.id.toLowerCase())
-                  ).length;
+                  p.serviceCategory?.toLowerCase().includes(cat.id.toLowerCase())
+                ).length;
 
             return (
               <button
@@ -243,7 +262,7 @@ export default function Partners() {
                   <h3>{partner.businessName}</h3>
                   <p className="partner-technician">Technician: {partner.ownerName}</p>
                   <p className="partner-location">📍 {[partner.city, partner.state].filter(Boolean).join(', ')}</p>
-                  
+
                   {partner.description && (
                     <p className="partner-description">
                       {partner.description.length > 110
@@ -403,17 +422,46 @@ export default function Partners() {
             <label>Street address
               <input maxLength="200" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             </label>
-            <label>Primary service *
-              <select required value={form.serviceCategory} onChange={(e) => setForm({ ...form, serviceCategory: e.target.value })}>
-                <option value="">Choose a service</option>
-                <option>AC Repair &amp; Service</option>
-                <option>Refrigerator Repair</option>
-                <option>Washing Machine Repair</option>
-                <option>Microwave Repair</option>
-                <option>Multi-appliance Service</option>
-                <option>Other</option>
+
+            {/* 🔵 BLUE THEMED PRIMARY SERVICE CATEGORY SELECT (MATCHING ADD BOOKING MODAL) */}
+            <label style={{ color: '#0284c7', fontWeight: 800, fontSize: '0.86rem' }}>
+              Primary service category *
+              <select
+                required
+                value={form.serviceCategory}
+                onChange={(e) => setForm({ ...form, serviceCategory: e.target.value })}
+                style={{
+                  backgroundColor: '#eff6ff',
+                  color: '#0369a1',
+                  border: '2px solid #0284c7',
+                  fontWeight: 800,
+                  borderRadius: '10px',
+                  padding: '11px 14px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.92rem',
+                  boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.15)',
+                  width: '100%'
+                }}
+              >
+                <option value="" style={{ color: '#64748b', backgroundColor: '#ffffff' }}>Choose a service category</option>
+                {ALL_SERVICE_OPTIONS.map((service) => (
+                  <option
+                    key={service}
+                    value={service}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      color: '#0f172a',
+                      fontWeight: 700,
+                      padding: '10px'
+                    }}
+                  >
+                    {service}
+                  </option>
+                ))}
               </select>
             </label>
+
             <label>Years of experience
               <input type="number" min="0" max="80" value={form.experienceYears} onChange={(e) => setForm({ ...form, experienceYears: e.target.value })} />
             </label>
@@ -444,9 +492,41 @@ export default function Partners() {
         </form>
       </section>
 
-      <footer className="partners-footer">
-        <Link to="/">Chintu Cool AC Service</Link>
-        <span>Need service? <Link to="/contact">Contact our team</Link></span>
+      {/* FOOTER */}
+      <footer className="footer">
+        <div className="footer-grid">
+          <div className="footer-col">
+            <Link to="/" className="logo">
+              <img src={logo} alt="Chintu AC Cool Care" className="logo-img" />
+              <span className="logo-text">Chintu Cool AC Service</span>
+            </Link>
+            <p>Your dependable neighborhood technician network for air conditioning, cooling refrigeration, electrical motors, fans, wiring, and home laundry systems.</p>
+          </div>
+
+          <div className="footer-col">
+            <h4>Quick Links</h4>
+            <Link to="/">Home</Link>
+            <Link to="/services">Services</Link>
+            <Link to="/about">About Us</Link>
+            <Link to="/contact">Contact</Link>
+          </div>
+
+          <div className="footer-col">
+            <h4>Direct Contacts</h4>
+            <a href="tel:+919354397318">📞 +91 93543 97318</a>
+            <a href="tel:+918506994651">📞 +91 85069 94651</a>
+            <a href="mailto:gaurav25543@gmail.com">✉️ gaurav25543@gmail.com</a>
+          </div>
+
+          <div className="footer-col">
+            <h4>Operational Headquarters</h4>
+            <p>📍M-12 Sector 11 , Noida</p>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <p>© 2026 Chintu Cool AC Service. All rights reserved.</p>
+        </div>
       </footer>
     </main>
   );
