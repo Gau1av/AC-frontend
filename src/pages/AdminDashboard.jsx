@@ -369,7 +369,7 @@ export default function AdminDashboard() {
     // eslint-disable-next-line
   }, [reportRange, permissions]);
 
-  /* ---------- HANDLERS ---------- */
+  /* ---------- ACTION HANDLERS ---------- */
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin/login');
@@ -506,11 +506,23 @@ export default function AdminDashboard() {
     }
   };
 
-  /* ---------- BLOG APPROVAL & CRUD HANDLERS ---------- */
+  /* ---------- BULLETPROOF BLOG STATUS TOGGLE (PATCH with PUT Fallback) ---------- */
   const handleBlogStatusUpdate = async (blogId, nextStatus) => {
     try {
-      const res = await API.patch(`/api/admin/blogs/${blogId}/status`, { status: nextStatus });
-      if (res.data.success) {
+      let res;
+      try {
+        // First try PATCH endpoint
+        res = await API.patch(`/api/admin/blogs/${blogId}/status`, { status: nextStatus });
+      } catch (patchErr) {
+        // Fallback to standard PUT update if PATCH route is not defined on backend
+        if (patchErr.response?.status === 404) {
+          res = await API.put(`/api/admin/blogs/${blogId}`, { status: nextStatus });
+        } else {
+          throw patchErr;
+        }
+      }
+
+      if (res?.data?.success) {
         setBlogs((prev) =>
           prev.map((b) => (b._id === blogId ? { ...b, status: nextStatus } : b))
         );
@@ -820,7 +832,7 @@ export default function AdminDashboard() {
           color: #0f172a;
         }
 
-        /* ============ 1. FIXED LEFT SIDEBAR ============ */
+        /* SIDEBAR */
         .sidebar {
           width: 280px;
           background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
@@ -916,7 +928,7 @@ export default function AdminDashboard() {
           font-size: 0.82rem; outline: none; cursor: pointer; font-weight: 600; text-align: left;
         }
 
-        /* 🔵 BLUE THEMED SELECT CATEGORY DROPDOWN */
+        /* 🔵 SOLID BLUE ACCENT FOR SELECT CATEGORY */
         .select-category-blue {
           background: #eff6ff !important;
           color: #0369a1 !important;
@@ -952,7 +964,7 @@ export default function AdminDashboard() {
           font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
-        /* ============ 2. MAIN CONTENT AREA ============ */
+        /* MAIN CONTENT AREA */
         .main-content-layout {
           flex: 1;
           display: flex;
@@ -963,7 +975,6 @@ export default function AdminDashboard() {
           text-align: left;
         }
 
-        /* FIXED TOP SECTION */
         .fixed-top-section {
           flex-shrink: 0;
           background: #ffffff;
@@ -1039,7 +1050,6 @@ export default function AdminDashboard() {
           background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1.5px solid #e2e8f0;
         }
 
-        /* SCROLLABLE BODY */
         .scrollable-body-section {
           flex: 1;
           overflow-y: auto;
@@ -1047,7 +1057,6 @@ export default function AdminDashboard() {
           text-align: left;
         }
 
-        /* HORIZONTAL SLIDER */
         .slider-section-wrap {
           display: flex; align-items: center; margin-bottom: 16px;
           background: #ffffff; padding: 10px 14px; border-radius: 12px;
@@ -1093,7 +1102,6 @@ export default function AdminDashboard() {
           background: #0f172a; color: #ffffff; cursor: pointer; font-weight: 800; font-size: 0.88rem;
         }
 
-        /* TABLE - CLEAN LEFT ALIGNED */
         .table-container {
           background: #ffffff; border-radius: 12px;
           box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05); border: 1.5px solid #e2e8f0;
@@ -1152,7 +1160,6 @@ export default function AdminDashboard() {
         .btn-approve { background: #dcfce7; color: #15803d; }
         .btn-reject { background: #fef3c7; color: #b45309; }
 
-        /* PAGINATION */
         .pagination-bar {
           display: flex; justify-content: space-between; align-items: center;
           flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 18px;
@@ -1169,7 +1176,7 @@ export default function AdminDashboard() {
         .page-btn.active { background: #0284c7; border-color: #0284c7; color: #ffffff; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ============ 3. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL ============ */
+        /* MODAL STYLES (LEFT ALIGNED) */
         .modal-overlay {
           position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75);
           backdrop-filter: blur(4px); display: flex; align-items: center;
@@ -1188,7 +1195,6 @@ export default function AdminDashboard() {
         }
         .modal-close:hover { background: #fee2e2; color: #ef4444; }
 
-        /* Customer / Vendor Name at Very Top */
         .modal-customer-name-hero {
           margin: 0 0 4px; font-size: 1.65rem; font-weight: 900;
           color: #0f172a; text-align: left !important; line-height: 1.2;
@@ -1198,7 +1204,6 @@ export default function AdminDashboard() {
           font-weight: 700; text-align: left !important;
         }
 
-        /* Sequential Filled Details Grid */
         .modal-info-grid {
           display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
           background: #f8fafc; padding: 18px; border-radius: 12px;
@@ -1229,7 +1234,6 @@ export default function AdminDashboard() {
           padding-top: 16px; border-top: 1.5px solid #e2e8f0; flex-wrap: wrap; text-align: left !important;
         }
 
-        /* ============ 4. MOBILE VIEW ============ */
         @media (max-width: 1024px) {
           .top-stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
@@ -1251,12 +1255,6 @@ export default function AdminDashboard() {
           .modal-box-left { padding: 22px 18px; border-radius: 12px; }
           .modal-info-grid { grid-template-columns: 1fr; }
           .admin-table th, .admin-table td { padding: 10px 12px; font-size: 0.82rem; }
-        }
-
-        @media (max-width: 480px) {
-          .modal-customer-name-hero { font-size: 1.35rem; }
-          .modal-bottom-actions { flex-direction: column; }
-          .modal-bottom-actions button { width: 100%; justify-content: center; }
         }
       `}</style>
 
@@ -1559,10 +1557,9 @@ export default function AdminDashboard() {
 
         {/* SCROLLABLE BODY */}
         <div className="scrollable-body-section">
-          {/* ============ TAB 1: CUSTOMER INQUIRIES ============ */}
+          {/* TAB 1: INQUIRIES */}
           {activeTab === 'dashboard' && (
             <>
-              {/* HORIZONTAL QUICK SLIDER STRIP */}
               <div className="slider-section-wrap">
                 <button className="slider-scroll-btn" onClick={() => handleScrollSlider(-220)} title="Scroll Left">
                   ◀
@@ -1604,7 +1601,6 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* SEARCH */}
               <div className="search-bar-wrap">
                 <input
                   type="text"
@@ -1616,7 +1612,6 @@ export default function AdminDashboard() {
                 <button className="search-btn" onClick={fetchInquiries}>Search</button>
               </div>
 
-              {/* TABLE */}
               <div className="table-container">
                 <table className="admin-table">
                   <thead>
@@ -1678,7 +1673,6 @@ export default function AdminDashboard() {
                 </table>
               </div>
 
-              {/* PAGINATION */}
               {filteredInquiries.length > itemsPerPage && (
                 <div className="pagination-bar">
                   <div className="pagination-info">
@@ -1724,7 +1718,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ============ TAB 2: BUSINESS BOOKINGS ============ */}
+          {/* TAB 2: BUSINESSES */}
           {activeTab === 'businesses' && (
             <>
               <div className="search-bar-wrap">
@@ -1816,7 +1810,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ============ TAB 3: BLOGS ============ */}
+          {/* TAB 3: BLOGS */}
           {activeTab === 'blogs' && (
             <>
               <div className="search-bar-wrap">
@@ -1934,7 +1928,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ============ TAB 4: COMMENTS ============ */}
+          {/* TAB 4: COMMENTS */}
           {activeTab === 'comments' && (
             <div className="table-container">
               <table className="admin-table">
@@ -1971,7 +1965,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ============ TAB 5: SUBSCRIBERS ============ */}
+          {/* TAB 5: SUBSCRIBERS */}
           {activeTab === 'subscribers' && (
             <div className="table-container">
               <table className="admin-table">
@@ -2001,7 +1995,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ============ TAB 6: REPORTS ============ */}
+          {/* TAB 6: REPORTS */}
           {activeTab === 'reports' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
               <div className="table-container" style={{ padding: '20px' }}>
@@ -2021,19 +2015,17 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ============ 3. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL (CUSTOMER) ============ */}
+      {/* MODAL: VIEW CUSTOMER BOOKING */}
       {viewItem && (
         <div className="modal-overlay" onClick={() => setViewItem(null)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewItem(null)}>✕</button>
 
-            {/* Customer Name Prominently at the Very Top Left */}
             <h2 className="modal-customer-name-hero">{viewItem.name}</h2>
             <p className="modal-customer-sub">
               Booking Lead ID: <span style={{ color: '#0284c7' }}>#{viewItem._id.slice(-6).toUpperCase()}</span> · Received {new Date(viewItem.createdAt).toLocaleString()}
             </p>
 
-            {/* Filled Details Stacked in Left-Aligned Grid */}
             <div className="modal-info-grid">
               <div className="modal-info-item">
                 <strong>Phone Number</strong>
@@ -2061,7 +2053,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Issue Description Left-Aligned */}
             <div className="modal-message-section">
               <strong>Appliance Problem & Customer Message</strong>
               <div className="modal-message-box">
@@ -2069,7 +2060,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Bottom Actions */}
             <div className="modal-bottom-actions">
               <button
                 type="button"
@@ -2100,19 +2090,17 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ 4. STRICTLY LEFT-ALIGNED VIEW DETAILS MODAL (BUSINESS) ============ */}
+      {/* MODAL: VIEW BUSINESS BOOKING */}
       {viewBusiness && (
         <div className="modal-overlay" onClick={() => setViewBusiness(null)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setViewBusiness(null)}>✕</button>
 
-            {/* Business Name at Very Top Left */}
             <h2 className="modal-customer-name-hero">{viewBusiness.businessName}</h2>
             <p className="modal-customer-sub">
               Vendor Profile ID: <span style={{ color: '#ff8a00' }}>#{viewBusiness._id.slice(-6).toUpperCase()}</span> · Registered {new Date(viewBusiness.createdAt).toLocaleString()}
             </p>
 
-            {/* Sequential Filled Details Grid */}
             <div className="modal-info-grid">
               <div className="modal-info-item">
                 <strong>Owner / Technician</strong>
@@ -2172,7 +2160,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ MODAL: ADD CUSTOMER BOOKING ============ */}
+      {/* MODAL: ADD CUSTOMER BOOKING */}
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
@@ -2193,7 +2181,6 @@ export default function AdminDashboard() {
                   value={newInquiry.mobile} onChange={(e) => setNewInquiry({ ...newInquiry, mobile: e.target.value })}
                 />
               </div>
-              {/* 🔵 BLUE THEMED CATEGORY SELECT IN ADD FORM */}
               <div style={{ marginBottom: '12px', textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', color: '#0284c7', textAlign: 'left' }}>Select Category *</label>
                 <select
@@ -2227,7 +2214,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ MODAL: REGISTER BUSINESS ============ */}
+      {/* MODAL: REGISTER BUSINESS */}
       {isBusinessModalOpen && (
         <div className="modal-overlay" onClick={() => setIsBusinessModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
@@ -2262,7 +2249,6 @@ export default function AdminDashboard() {
                   value={newBusiness.city} onChange={(e) => setNewBusiness({ ...newBusiness, city: e.target.value })}
                 />
               </div>
-              {/* 🔵 BLUE THEMED CATEGORY SELECT IN BUSINESS FORM */}
               <div style={{ marginBottom: '18px', textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 800, marginBottom: '4px', color: '#0284c7', textAlign: 'left' }}>Select Category</label>
                 <select
@@ -2281,7 +2267,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ MODAL: BLOG EDIT / CREATE ============ */}
+      {/* MODAL: BLOG EDIT / CREATE */}
       {isBlogModalOpen && (
         <div className="modal-overlay" onClick={() => setIsBlogModalOpen(false)}>
           <div className="modal-box-left" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
@@ -2322,7 +2308,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ============ MODAL: EXCEL IMPORT ============ */}
+      {/* MODAL: EXCEL IMPORT */}
       {isUploadModalOpen && (
         <div className="modal-overlay" onClick={() => setIsUploadModalOpen(false)}>
           <div className="modal-box-left" onClick={(e) => e.stopPropagation()}>
